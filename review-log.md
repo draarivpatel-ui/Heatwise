@@ -77,3 +77,7 @@ immersion is the best method, never leave them alone, when in doubt cool and cal
   API itself answered normally ("77479" → Sugar Land, TX).
 - Still open: the Spanish has not had a native-speaker review; the long OSHA workload option labels are
   truncated in the closed menu on a phone (the native picker shows them in full).
+- Published with `push_repo.sh` to github.com/draarivpatel-ui/Heatwise (main). Live check after the Pages
+  rebuild: https://aariv.me/Heatwise/ serves files identical to the repo (index.html, app.js, i18n.js,
+  styles.css, README.md, review-log.md hashes match), and the same headless suite run against the live URL
+  gave 0 errors, no overflow at 390 px, 0 axe violations (EN + ES), and the same error-state results.
