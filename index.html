@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <a class="skip" href="#results" data-i18n="skip"></a>
+  <a class="skip" href="#main" data-i18n="skip"></a>
   <header class="top">
     <div class="wrap top-inner">
       <div>
@@ -18,13 +18,13 @@
         <p class="tagline" data-i18n="tagline"></p>
       </div>
       <div class="lang" role="group" aria-label="Language / Idioma">
-        <button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button>
-        <button type="button" data-lang="es" aria-pressed="false" lang="es">ES</button>
+        <button type="button" data-lang="en" aria-pressed="true" lang="en" aria-label="English">EN</button>
+        <button type="button" data-lang="es" aria-pressed="false" lang="es" aria-label="Español">ES</button>
       </div>
     </div>
   </header>
 
-  <main class="wrap" id="main">
+  <main class="wrap" id="main" tabindex="-1">
     <form id="planForm" class="grid2" autocomplete="off" novalidate>
       <section class="card" aria-labelledby="whereTitle">
         <h2 id="whereTitle" data-i18n="whereTitle"></h2>
@@ -90,7 +90,10 @@
       </section>
     </form>
 
-    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <div class="status-row">
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <button type="button" id="retryBtn" class="ghost" data-i18n="retry" hidden></button>
+    </div>
 
     <section id="results" tabindex="-1" aria-labelledby="resultsTitle" hidden>
       <h2 id="resultsTitle" data-i18n="resultsTitle"></h2>
@@ -187,6 +190,7 @@
         <a href="https://www.osha.gov/heat-exposure/hazards" target="_blank" rel="noopener">OSHA Heat Hazard Recognition</a> ·
         <a href="https://www.cdc.gov/niosh/heat-stress/recommendations/index.html" target="_blank" rel="noopener">NIOSH Workplace Recommendations</a> ·
         <a href="https://www.osha.gov/heat-exposure/illness-first-aid" target="_blank" rel="noopener">OSHA First Aid</a> ·
+        <a href="https://www.weather.gov/safety/heat-illness" target="_blank" rel="noopener">NWS Heat Cramps, Exhaustion, Stroke</a> ·
         <a href="https://doi.org/10.1080/15459620802310770" target="_blank" rel="noopener">Liljegren et al. 2008</a> ·
         <a href="http://www.bom.gov.au/info/thermal_stress/" target="_blank" rel="noopener">BoM Thermal Stress</a> ·
         <a href="https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml" target="_blank" rel="noopener">NWS Heat Index</a> ·
