@@ -5,6 +5,7 @@ import {
   heatIndexF, wbgtApprox, vaporPressure, limitFor, riskLevel, scoreHours, bestWindow, hourAllowed,
   hydrationPlan, acclimatizationSchedule, sampleHours, cToF, fToC, uilFlag, UIL_MAX_HOURS,
   globeTemp, wetBulbTemp, wbgtLiljegren, solarPosition, solarParams, estimateWbgt, localHour, SAMPLE_PLACE,
+  UIL_CLASSES, WORKLOADS,
 } from "../js/heat.js";
 import { STRINGS, PRESETS } from "../js/i18n.js";
 
@@ -243,6 +244,30 @@ test("index.html only references i18n keys that exist", () => {
   const keys = [...html.matchAll(/data-i18n(?:-placeholder)?="([^"]+)"/g)].map((m) => m[1]);
   assert.ok(keys.length > 30);
   for (const k of keys) assert.ok(k in STRINGS.en && k in STRINGS.es, `missing key ${k}`);
+});
+
+// ---------- the words on screen agree with the numbers in the code ----------
+test("'How the math works' (EN and ES) quotes the same UIL edges and OSHA/NIOSH limits as heat.js", () => {
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  for (const lang of ["en", "es"]) {
+    const block = html.split(`data-show-lang="${lang}"`)[1].split("</div>")[0];
+    for (const f of [...UIL_CLASSES[3], ...UIL_CLASSES[2]]) assert.ok(block.includes(f.toFixed(1)), `${lang}: UIL edge ${f}`);
+    for (const [k, v] of Object.entries(WORKLOADS)) assert.ok(block.includes(`${v.unacclimatized}/${v.acclimatized}`), `${lang}: ${k} limit`);
+  }
+});
+
+test("guidance strings match the sources' numbers in both languages", () => {
+  for (const lang of ["en", "es"]) {
+    const S = STRINGS[lang];
+    assert.ok(S.waterMax.includes(String(hydrationPlan(1).maxOzPerHour)), `${lang}: 48 oz/h (NIOSH)`);
+    assert.ok(S.waterCool.includes("59") && S.waterCool.includes("15"), `${lang}: water < 15 °C / 59 °F (NIOSH)`);
+    assert.ok(S.uilPlanningNote.includes("82.0") && S.uilPlanningNote.includes("79.7") && S.uilPlanningNote.includes("15") && S.uilPlanningNote.includes("30"), `${lang}: UIL monitoring rule`);
+    assert.ok(S.signsStroke.includes("911") && S.signsRule.includes("911"), `${lang}: call 911 (OSHA)`);
+    assert.ok(S.signsStroke.includes("103"), `${lang}: heat stroke > 103 °F (NWS)`);
+    assert.ok(S.acclIntro.includes("7") && S.acclIntro.includes("14"), `${lang}: 7–14 days (NIOSH)`);
+    assert.ok(/SYNTHETIC|SINTÉTICO/.test(S.errApi) && /SYNTHETIC|SINTÉTICO/.test(S.sampleBanner), `${lang}: fallback is labelled as not real`);
+    assert.ok(S.windowTooLong(2).includes("2") && S.windowTooLong(1).includes("1"), `${lang}: UIL practice caps`);
+  }
 });
 
 console.log(`\n${passed} tests passed${process.exitCode ? " (with failures above)" : ""}.`);
