@@ -38,7 +38,8 @@ a { color: var(--accent); }
 @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } .top h1 { font-size: 1.6rem; } .tagline { font-size: .95rem; } }
 label { display: block; margin: 12px 0 4px; font-size: 0.92rem; font-weight: 600; color: var(--ink); }
 label.check { display: flex; align-items: flex-start; gap: 8px; font-weight: 400; margin: 12px 0; }
-label.check input { width: 20px; height: 20px; margin: 2px 0 0; flex-shrink: 0; accent-color: var(--accent); }
+label.check { min-height: 44px; align-items: center; }
+label.check input { width: 24px; height: 24px; min-height: 0; padding: 0; margin: 0; flex-shrink: 0; accent-color: var(--accent); }
 input, select { font: inherit; width: 100%; min-height: 44px; padding: 9px 10px; border: 1px solid #a8a29e; border-radius: 10px; background: #fff; color: var(--ink); }
 .hint { margin: 4px 0 0; font-size: .85rem; color: var(--muted); }
 .row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin: 8px 0; }
@@ -55,7 +56,7 @@ button.primary { width: 100%; margin-top: 16px; padding: 12px; font-size: 1.05re
 button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible, .table-wrap:focus-visible, #results:focus-visible {
   outline: 3px solid #2563eb; outline-offset: 2px;
 }
-#results:focus { outline: none; }
+#results:focus, #main:focus { outline: none; }
 .results { list-style: none; padding: 0; margin: 4px 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .results li button { width: 100%; text-align: left; background: #fff; color: var(--ink); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; font-weight: 400; }
 .results li button:hover, .results li button:focus { background: #fff7ed; }
@@ -63,7 +64,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .place-label { margin: 8px 0 0; font-weight: 600; min-height: 1.5em; }
 .muted { color: var(--muted); }
 .small { font-size: 0.88rem; }
-.status { min-height: 1.5em; font-weight: 600; margin: 4px 0 12px; }
+.status-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 4px 0 12px; }
+.status { min-height: 1.5em; font-weight: 600; margin: 0; flex: 1 1 240px; }
 .status.error { color: #9a1d1d; }
 .banner { background: #fef3c7; border: 1px solid #d97706; padding: 10px 12px; border-radius: 10px; font-weight: 600; }
 .note { background: #eff6ff; border: 1px solid #93c5fd; padding: 10px 12px; border-radius: 10px; margin: 0 0 16px; }
@@ -84,7 +86,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .pill.extreme, .pill.red { background: #fee2e2; color: #7f1d1d; border-color: #dc2626; }
 .pill.black { background: #111827; color: #fff; border-color: #111827; }
 .stats { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0 0 8px; font-size: 0.92rem; }
-.stats dt { color: var(--muted); } .stats dd { margin: 0; font-weight: 600; }
+.stats dt { color: var(--muted); } .stats dd { margin: 0; font-weight: 600; white-space: nowrap; }
 .chart { width: 100%; overflow: hidden; }
 .chart svg { width: 100%; height: auto; display: block; }
 .legend { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); }
@@ -102,6 +104,7 @@ thead th { position: sticky; top: 0; background: #faf5ef; z-index: 1; }
 th, td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
 tbody th { font-weight: 600; }
 tr.off { color: #78716c; }
+@media (max-width: 480px) { th, td { padding: 6px 6px; } table { font-size: 0.82rem; } .card { padding: 16px 14px; } }
 .warn { background: #fff7ed; border-color: #fdba74; }
 .warn li { margin-bottom: 4px; }
 .accl { padding-left: 22px; }
@@ -111,7 +114,7 @@ footer { padding: 16px; text-align: center; }
 .print-only { display: none; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 @media print {
-  .top, form, .no-print, .math, details summary, .skip, .status, footer { display: none !important; }
+  .top, form, .no-print, .math, details summary, .skip, .status-row, footer { display: none !important; }
   details > *:not(summary) { display: block !important; }
   .table-wrap { max-height: none; overflow: visible; border: 0; }
   body { background: #fff; }
