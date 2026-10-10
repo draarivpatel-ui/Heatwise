@@ -51,7 +51,7 @@ function hourLabel(h) {
 }
 
 function renderPlaceLabel() {
-  const p = state.data?.isSample ? null : state.place;
+  const p = state.data?.isSample && !state.data?.fallbackFor ? null : state.place;
   $("placeLabel").textContent = p ? `📍 ${p.label === "myLocation" ? t("myLocation") + " (" + p.name + ")" : p.name}` : "";
 }
 
@@ -131,15 +131,17 @@ async function loadPlace(place) {
   setBusy(true);
   try {
     const { hours, tz, tzAbbr } = await fetchForecast(place.lat, place.lon);
-    const start = currentIndex(hours);
-    const slice = hours.slice(start, start + 48);
-    if (slice.length < 6) throw new Error("too few hours");
-    state.data = { hours: slice, isSample: false, tz, tzAbbr, place };
+    const future = hours.slice(currentIndex(hours));
+    if (future.length < 6) throw new Error("too few hours");
+    state.data = { hours: future, isSample: false, tz, tzAbbr, place, fetchedAt: Date.now() };
+    $("retryBtn").hidden = true;
     setStatus("");
   } catch (e) {
     console.warn(e);
-    loadSample(false);
+    // Keep the place so "Try again" and the share link still point at it, but show the labelled sample day.
+    loadSample(false, place);
     setStatus(t("errApi"), true);
+    $("retryBtn").hidden = false;
     return;
   } finally {
     setBusy(false);
@@ -147,16 +149,16 @@ async function loadPlace(place) {
   render(true);
 }
 
-function loadSample(clearStatus = true) {
-  state.data = { hours: sampleHours(Date.now()), isSample: true, tz: SAMPLE_PLACE.tz, tzAbbr: "", place: SAMPLE_PLACE };
-  if (clearStatus) setStatus("");
+function loadSample(clearStatus = true, fallbackFor = null) {
+  state.data = { hours: sampleHours(Date.now()), isSample: true, tz: SAMPLE_PLACE.tz, tzAbbr: "", place: SAMPLE_PLACE, fallbackFor, fetchedAt: Date.now() };
+  if (clearStatus) { setStatus(""); $("retryBtn").hidden = true; }
   renderPlaceLabel();
   render(true);
 }
 
 function setBusy(b) {
   state.busy = b;
-  ["searchBtn", "geoBtn", "sampleBtn"].forEach((id) => { $(id).disabled = b; });
+  ["searchBtn", "geoBtn", "sampleBtn", "retryBtn"].forEach((id) => { $(id).disabled = b; });
   document.querySelector("button.primary").disabled = b;
 }
 
@@ -189,7 +191,14 @@ function render(scrollTo = false) {
   const p = profile();
   const uil = p.guideline === "uil";
   const tz = state.data.tz;
-  const scored = scoreHours(state.data.hours, p, state.data.place);
+  if (state.data.isSample && Date.now() - state.data.fetchedAt > 3600e3) state.data.hours = sampleHours(Date.now());
+  const visible = state.data.hours.slice(currentIndex(state.data.hours)).slice(0, 48);
+  if (!visible.length || visible[0].t + 3600e3 <= Date.now() || (visible.length < 6 && !state.data.isSample)) {
+    // Every forecast hour has passed (tab left open for days): get a fresh one instead of showing old hours.
+    if (state.place && !state.busy) loadPlace(state.place); else loadSample();
+    return;
+  }
+  const scored = scoreHours(visible, p, state.data.place);
   const sameHours = p.earliest === p.latest;
   const allowed = (h) => hourAllowed(localHour(h.t, tz), p.earliest, p.latest);
   const best = bestWindow(scored, p.duration, allowed);
@@ -236,7 +245,7 @@ function render(scrollTo = false) {
 
   // Water plan
   const w = hydrationPlan(p.duration);
-  const items = [STRINGS[state.lang].waterLine(w), t("waterThirst"), t("waterMax"), t("waterCool")];
+  const items = [STRINGS[state.lang].waterLine(w), t("waterThirst"), t("waterMax"), t("waterCool"), t("waterAvoid")];
   if (w.electrolytes) items.push(t("waterElectro"));
   if (uil) items.push(t("waterUil"));
   $("waterList").innerHTML = items.map((s) => `<li>${escapeHtml(s)}</li>`).join("");
@@ -255,7 +264,7 @@ const advice = (level, uil) => (uil ? t("uil_" + level) : t("adv_" + level));
 function printSummaryText(p) {
   const pr = $("preset");
   const parts = [`${t("printSummary")}: ${pr.options[pr.selectedIndex]?.text || ""}`,
-    p.guideline === "uil" ? `${t("gl_uil")} – ${t("uil_" + p.uilClass)}` : `${t("gl_osha")} – ${$("workload").selectedOptions[0]?.text}, ${p.acclimatized ? t("acclimatized") : "—"}, ${$("clothing").selectedOptions[0]?.text}`,
+    p.guideline === "uil" ? `${t("gl_uil")} – ${t("uil_" + p.uilClass)}` : `${t("gl_osha")} – ${$("workload").selectedOptions[0]?.text}, ${p.acclimatized ? t("acclimatized") : t("notAcclimatized")}, ${$("clothing").selectedOptions[0]?.text}`,
     `${t("duration")}: ${p.duration}`, `${t("earliest")}: ${hourLabel(p.earliest)}`, `${t("latest")}: ${hourLabel(p.latest)}`];
   return parts.join(" · ");
 }
@@ -279,7 +288,7 @@ function statsHtml(h, uil) {
        <dt>${t("limitLabel")}</dt><dd>${fmtFC(h.limit)}</dd>`;
   return `${main}
     <dt>${t("hiLabel")}</dt><dd>${Math.round(h.heatIndexF)}°F</dd>
-    <dt>${t("airLabel")}</dt><dd>${fmtF(h.tempC)} · ${Math.round(h.rh)}% RH</dd>`;
+    <dt>${t("airLabel")}</dt><dd>${fmtF(h.tempC)} · ${Math.round(h.rh)}% ${t("rhAbbr")}</dd>`;
 }
 
 function tableHtml(scored, uil) {
@@ -306,7 +315,7 @@ function renderChart() {
   const box = $("chart");
   const W = Math.max(300, Math.min(1000, Math.round(box.clientWidth || 960)));
   const H = W < 520 ? 240 : 300;
-  const L = 44, R = 10, T = 12, B = 34;
+  const L = 44, R = 10, T = 12, B = 46;
   const n = scored.length;
   const valF = scored.map((h) => cToF(uil ? h.wbgt : h.effWbgt));
   const lines = uil
@@ -334,18 +343,24 @@ function renderChart() {
   lines.forEach((l) => {
     if (l.f < lo || l.f > hi) return;
     s += `<line x1="${L}" x2="${W - R}" y1="${y(l.f).toFixed(1)}" y2="${y(l.f).toFixed(1)}" stroke="${SEV_STROKE[l.sev]}" stroke-width="1.6" stroke-dasharray="6 4"/>`;
-    s += `<text x="${W - R - 4}" y="${(y(l.f) - 4).toFixed(1)}" text-anchor="end" fill="${SEV_STROKE[l.sev]}" font-weight="700">${l.f.toFixed(l.f % 1 ? 1 : 0)}°F</text>`;
+    s += `<text x="${W - R - 4}" y="${(y(l.f) - 4).toFixed(1)}" text-anchor="end" fill="${SEV_STROKE[l.sev]}" font-weight="700" stroke="#fff" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${l.f.toFixed(l.f % 1 ? 1 : 0)}°F</text>`;
   });
   if (best) {
     s += `<rect x="${x(best.start).toFixed(1)}" y="${T + 1}" width="${(bw * (best.end - best.start + 1)).toFixed(1)}" height="${H - T - B - 2}" fill="none" stroke="#15803d" stroke-width="3" rx="4"/>`;
   }
   const pts = valF.map((v, i) => `${(x(i) + bw / 2).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
   s += `<polyline points="${pts}" fill="none" stroke="#431407" stroke-width="2.5" stroke-linejoin="round"/>`;
+  // Two-line tick labels (hour, then weekday) so they never collide on a 390 px phone, in either language.
   const every = W < 520 ? 12 : 6;
+  const dayFmt = fmt({ weekday: "short" });
   scored.forEach((h, i) => {
     if (i % every === 0) {
-      s += `<line x1="${(x(i) + bw / 2).toFixed(1)}" x2="${(x(i) + bw / 2).toFixed(1)}" y1="${H - B}" y2="${H - B + 4}" stroke="#78716c"/>`;
-      s += `<text x="${(x(i) + bw / 2).toFixed(1)}" y="${H - B + 18}" text-anchor="${i === 0 ? "start" : "middle"}" fill="#57534e">${escapeHtml(fmtTime(h.t))}</text>`;
+      const cx = x(i) + bw / 2;
+      const anchor = i === 0 ? "start" : cx > W - R - 30 ? "end" : "middle";
+      const tx = (i === 0 ? x(i) : cx).toFixed(1);
+      s += `<line x1="${cx.toFixed(1)}" x2="${cx.toFixed(1)}" y1="${H - B}" y2="${H - B + 4}" stroke="#78716c"/>`;
+      s += `<text x="${tx}" y="${H - B + 17}" text-anchor="${anchor}" fill="#57534e">${escapeHtml(fmtTime(h.t, false))}`
+        + `<tspan x="${tx}" dy="14">${escapeHtml(dayFmt.format(new Date(h.t)))}</tspan></text>`;
     }
   });
   box.innerHTML = s + "</svg>";
@@ -367,7 +382,7 @@ function syncUrl() {
     lang: state.lang, preset: $("preset").value, g: p.guideline, uc: p.uilClass, wl: p.workload,
     acc: p.acclimatized ? 1 : 0, cl: p.clothing, dur: p.duration, e: p.earliest, l: p.latest,
   });
-  if (state.data?.isSample) q.set("sample", "1");
+  if (state.data?.isSample && !state.data?.fallbackFor) q.set("sample", "1");
   else if (state.place) { q.set("lat", state.place.lat); q.set("lon", state.place.lon); q.set("name", state.place.name); }
   history.replaceState(null, "", `${location.pathname}?${q}`);
 }
@@ -380,7 +395,7 @@ function readUrl() {
   else if (!q.has("lang") && (navigator.language || "").toLowerCase().startsWith("es")) state.lang = "es";
   applyLang();
   setIfValid("preset", q.get("preset"), (v) => v in PRESETS);
-  if (q.get("preset") in PRESETS) applyPreset(false);
+  applyPreset(false); // also on a plain visit, so the default preset's workload matches what the menu shows
   setIfValid("guideline", q.get("g"), (v) => v === "uil" || v === "osha");
   setIfValid("uilClass", q.get("uc"), (v) => v === "2" || v === "3");
   setIfValid("workload", q.get("wl"), (v) => v in WORKLOADS);
@@ -389,6 +404,10 @@ function readUrl() {
   setIfValid("duration", q.get("dur"), (v) => /^\d{1,2}$/.test(v) && +v >= 1 && +v <= 12);
   setIfValid("earliest", q.get("e"), (v) => /^\d{1,2}$/.test(v) && +v >= 0 && +v <= 23);
   setIfValid("latest", q.get("l"), (v) => /^\d{1,2}$/.test(v) && +v >= 1 && +v <= 24);
+  // A link whose settings don't match its preset (or that has no preset) is a custom plan: say so in the menu.
+  const pr = PRESETS[$("preset").value];
+  if (pr && ($("guideline").value !== pr.guideline || Number($("duration").value) !== pr.duration
+    || (pr.guideline === "osha" && $("workload").value !== pr.workload))) $("preset").value = "custom";
   syncGuidelineFields();
   const lat = Number(q.get("lat")), lon = Number(q.get("lon"));
   if (q.get("sample") === "1") loadSample();
@@ -401,6 +420,7 @@ function readUrl() {
 async function doSearch() {
   const query = $("place").value.trim();
   const list = $("placeResults");
+  list.hidden = true;
   if (query.length < 2) { setStatus(t("errGeo"), true); $("place").focus(); return; }
   setStatus(t("searching"));
   setBusy(true);
@@ -453,18 +473,29 @@ $("placeResults").addEventListener("keydown", (e) => {
   }
 });
 $("geoBtn").addEventListener("click", () => {
-  if (!navigator.geolocation) return setStatus(t("errLocation"), true);
-  setStatus(t("loading"));
+  if (!navigator.geolocation) return setStatus(t("errLocationOff"), true);
+  setStatus(t("locating"));
+  setBusy(true);
   navigator.geolocation.getCurrentPosition(
     (pos) => {
+      setBusy(false);
       const lat = +pos.coords.latitude.toFixed(3), lon = +pos.coords.longitude.toFixed(3);
       loadPlace({ lat, lon, name: `${lat.toFixed(2)}, ${lon.toFixed(2)}`, label: "myLocation" });
     },
-    () => setStatus(t("errLocation"), true),
+    (err) => { setBusy(false); setStatus(t(err && err.code === 1 ? "errLocation" : "errLocationOff"), true); },
     { timeout: 10000, maximumAge: 600000 },
   );
 });
 $("sampleBtn").addEventListener("click", () => { state.place = null; loadSample(); });
+$("retryBtn").addEventListener("click", () => { if (state.place) loadPlace(state.place); });
+// A plan left open in a tab goes stale: refetch when the user comes back after an hour or more.
+document.addEventListener("visibilitychange", () => {
+  const d = state.data;
+  if (document.visibilityState !== "visible" || !d || state.busy) return;
+  if (Date.now() - d.fetchedAt < 3600e3) return;
+  if (!d.isSample && state.place) loadPlace(state.place);
+  else render();
+});
 $("preset").addEventListener("change", () => applyPreset(true));
 $("guideline").addEventListener("change", () => { syncGuidelineFields(); $("preset").value = "custom"; render(); });
 ["uilClass", "workload", "acclimatized", "clothing", "duration", "earliest", "latest"].forEach((id) => $(id).addEventListener("change", () => {
