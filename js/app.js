@@ -88,33 +88,49 @@ function currentIndex(hours, now = Date.now()) {
   return i >= 0 ? i : 0;
 }
 
-async function loadPlace(place) {
+/** EN/ES label for a plan built from the saved forecast; "" for a fresh one. Re-rendered on language switch. */
+function cacheStatusText(d = state.data, now = Date.now()) {
+  if (!d || !d.cachedAt || d.isSample || d.isReplay) return "";
+  const n = Math.max(1, Math.round((now - d.cachedAt) / 60000));
+  return t(d.cacheFallback ? "cachedFallback" : "cachedAgo").replace("{n}", n);
+}
+function showCacheStatus() {
+  const msg = cacheStatusText();
+  setStatus(msg);
+  $("refreshBtn").hidden = !msg;
+}
+
+async function loadPlace(place, { force = false } = {}) {
   state.place = place;
   renderPlaceLabel();
-  setStatus(t("loading"));
+  setStatus(t(force ? "refreshing" : "loading"));
   setBusy(true);
   try {
-    const { hours, tz, tzAbbr, source, cachedAt } = await getForecastCached(place.lat, place.lon, { storage: (() => { try { return window.localStorage; } catch { return null; } })() });
+    const { hours, tz, tzAbbr, source, cachedAt, cacheFallback } = await getForecastCached(place.lat, place.lon, { force, storage: (() => { try { return window.localStorage; } catch { return null; } })() });
     const future = hours.slice(currentIndex(hours));
     if (future.length < 6) throw new Error("too few hours");
-    state.data = { hours: future, isSample: false, tz, tzAbbr, place, source, fetchedAt: Date.now() };
+    state.data = { hours: future, isSample: false, tz, tzAbbr, place, source, fetchedAt: Date.now(), cachedAt, cacheFallback: !!cacheFallback };
     $("retryBtn").hidden = true;
-    setStatus(cachedAt ? t("cachedAgo").replace("{n}", Math.max(1, Math.round((Date.now() - cachedAt) / 60000))) : "");
+    showCacheStatus();
   } catch (e) {
     console.warn(e);
     // Keep the place so "Try again" and the share link still point at it, but show the labelled sample day.
     loadSample(false, place);
     setStatus(t("errApi"), true);
     $("retryBtn").hidden = false;
+    $("refreshBtn").hidden = true;
     return;
   } finally {
     setBusy(false);
   }
-  render(true);
+  render(!force);
+  // "Refresh now" keeps the user where they are; if the button went away, keep keyboard focus on the status line.
+  if (force && $("refreshBtn").hidden && document.activeElement === document.body) $("status").focus({ preventScroll: true });
 }
 
 function loadSample(clearStatus = true, fallbackFor = null) {
   state.data = { hours: sampleHours(Date.now()), isSample: true, tz: SAMPLE_PLACE.tz, tzAbbr: "", place: SAMPLE_PLACE, fallbackFor, fetchedAt: Date.now() };
+  $("refreshBtn").hidden = true;
   if (clearStatus) { setStatus(""); $("retryBtn").hidden = true; }
   renderPlaceLabel();
   render(true);
@@ -146,6 +162,7 @@ async function loadReplay() {
   };
   state.urlDay = state.urlDay || REPLAY.day;
   $("retryBtn").hidden = true;
+  $("refreshBtn").hidden = true;
   setStatus("");
   renderPlaceLabel();
   render(true);
@@ -153,7 +170,7 @@ async function loadReplay() {
 
 function setBusy(b) {
   state.busy = b;
-  ["searchBtn", "geoBtn", "sampleBtn", "retryBtn", "replayBtn"].forEach((id) => { $(id).disabled = b; });
+  ["searchBtn", "geoBtn", "sampleBtn", "retryBtn", "replayBtn", "refreshBtn"].forEach((id) => { $(id).disabled = b; });
   document.querySelector("button.primary").disabled = b;
 }
 
@@ -639,6 +656,7 @@ $("coachShareBtn").addEventListener("click", async () => {
   }
 });
 $("retryBtn").addEventListener("click", () => { if (state.place) loadPlace(state.place); });
+$("refreshBtn").addEventListener("click", () => { if (state.place && !state.busy) loadPlace(state.place, { force: true }); });
 // A plan left open in a tab goes stale: refetch when the user comes back after an hour or more.
 document.addEventListener("visibilitychange", () => {
   const d = state.data;
@@ -664,6 +682,7 @@ $("planForm").addEventListener("submit", (e) => {
 });
 document.querySelectorAll("[data-lang]").forEach((b) => b.addEventListener("click", () => {
   state.lang = b.dataset.lang; fmtCache.clear(); applyLang(); if (state.data) syncUrl();
+  if (state.data?.cachedAt && !$("refreshBtn").hidden) showCacheStatus();
 }));
 $("shareBtn").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(location.href); setStatus(t("copied")); }
@@ -680,4 +699,4 @@ readUrl();
 syncGuidelineFields();
 
 // Exposed for the headless test harness only.
-window.__heatwise = { state, render, profile, loadReplay, coach: () => lastCoach };
+window.__heatwise = { state, render, profile, loadReplay, coach: () => lastCoach, cacheStatusText };
