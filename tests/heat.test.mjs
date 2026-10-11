@@ -255,6 +255,15 @@ test("index.html only references i18n keys that exist", () => {
   for (const k of keys) assert.ok(k in STRINGS.en && k in STRINGS.es, `missing key ${k}`);
 });
 
+test("the plan defines WBGT in plain words, in both languages, right under the source line", () => {
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.ok(html.indexOf('id="forecastSource"') < html.indexOf('id="wbgtHelp"'));
+  assert.match(html, /id="wbgtHelp"[^>]*data-i18n="wbgtHelp"/);
+  assert.match(STRINGS.en.wbgtHelp, /wet-bulb globe temperature/);
+  assert.match(STRINGS.es.wbgtHelp, /globo y bulbo húmedo/);
+  assert.match(STRINGS.es.wbgtHelp, /UIL/);
+});
+
 // ---------- the words on screen agree with the numbers in the code ----------
 test("'How the math works' (EN and ES) quotes the same UIL edges and OSHA/NIOSH limits as heat.js", () => {
   const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
