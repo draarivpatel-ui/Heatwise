@@ -1,6 +1,14 @@
 # HeatWise 🌡️
 
+**Live:** https://aariv.me/Heatwise/ · **Record-day replay:** https://aariv.me/Heatwise/?replay=iah2023 · **Demo day (synthetic, labelled):** https://aariv.me/Heatwise/?sample=1
+
 **Plan outdoor practice and work around the heat, hour by hour.**
+
+![HeatWise home screen: the record-day replay button, the "Where" search and the activity, guideline and time pickers](docs/hero.png)
+
+*Screenshot of the live site (Oct 2026), taken with headless Chromium.*
+
+## Features
 
 HeatWise turns a free weather forecast into a personal heat-safety plan for student athletes, marching-band members, coaches, and outdoor workers. You tell it *where*, *what you're doing*, and *for how long*; it tells you:
 
@@ -13,8 +21,6 @@ HeatWise turns a free weather forecast into a personal heat-safety plan for stud
 - **Shareable link and printable plan**, so a coach can send the whole team the same plan
 - **One-page coach plan** for any day in the plan: the safest practice window, an hour-by-hour flag strip, the rules for each flag that day, water, a before-practice checklist and first aid. Print it (or save as PDF) in **English, Spanish, or both** (one page per language), or share it as plain text for a team chat
 - **One-click replay of Houston's record day** ("▶ Replay Houston's record day (Aug 24, 2023)" at the top of the page): runs the archived IAH weather from the day Houston hit 109°F through the normal plan view, clearly labelled as a historical replay, so judges and coaches can see what HeatWise does on a dangerous day even when today's forecast is mild
-
-**Live:** https://aariv.me/Heatwise/ · **Record-day replay:** https://aariv.me/Heatwise/?replay=iah2023 · **Demo day (synthetic, labelled):** https://aariv.me/Heatwise/?sample=1
 
 Built for **EurekaDev 2026**, Coding Track, Problem in the Community.
 
@@ -117,7 +123,7 @@ python3 -m http.server 8000     # ES modules need http://, not file://
 ```bash
 node tests/heat.test.mjs
 ```
-The tests check the Liljegren globe and wet-bulb temperatures and end-to-end WBGT against pywbgt reference values, the sun position against NREL SPA (pvlib), the heat index against NWS chart values, the BoM fallback against BoM's worked example (29.4 °C / 59% RH → ≈30 °C), the UIL flag edges for Class 2 and 3, OSHA/NIOSH limits and clothing factors, the best-window algorithm (including the brute-force comparison), hydration and acclimatization math, DST-aware local hours, that every English string has a Spanish one, and that the guidance text quotes the same numbers as the code. Eight more tests cover the validation study: NWS duration parsing and missing-value handling, the agreement statistics, the archived NWS snapshot (heat index MAE < 0.5 °F, UIL flag agreement > 85%), and the 2023 replay (109 °F, heat index equal to IEM's within 0.1 °F, safest window in the early morning). Twelve cover the forecast inputs: the NWS-area check, the grid parser on a real api.weather.gov response (multi-hour values, °F and m/s units, −120 °F missing values, RH from dewpoint, pre-issue hours), the merge (NWS temperature/humidity/wind, Open-Meteo sunshine/pressure), every fallback with a fake fetch (NWS 500, grid 503 retried once, outside the U.S. with no NWS request, `/points` 404, stale grid, timeout, Open-Meteo down → NWS-only, both down → error), that the app's U.S. path reproduces the NWS-weather validation result and errs warm, and that the source labels exist in both languages and quote the measured backup bias. Five cover the record-day replay and the coach plan: the replay through the plan view gives exactly the validation replay's WBGT and flags; the coach plan for Aug 24, 2023 picks 6–8 AM (green) and counts every black-flag hour; edge cases (no window fits, whole-day hours, a forecast spanning three local days across the end of daylight saving time); the share text in English and Spanish (every hour, the window, 911, the replay label, no English words left in the Spanish); and the page wiring (button above the form, print CSS that prints only the sheet with one page per language). 54 tests in total.
+The tests check the Liljegren globe and wet-bulb temperatures and end-to-end WBGT against pywbgt reference values, the sun position against NREL SPA (pvlib), the heat index against NWS chart values, the BoM fallback against BoM's worked example (29.4 °C / 59% RH → ≈30 °C), the UIL flag edges for Class 2 and 3, OSHA/NIOSH limits and clothing factors, the best-window algorithm (including the brute-force comparison), hydration and acclimatization math, DST-aware local hours, that every English string has a Spanish one, and that the guidance text quotes the same numbers as the code. Eight more tests cover the validation study: NWS duration parsing and missing-value handling, the agreement statistics, the archived NWS snapshot (heat index MAE < 0.5 °F, UIL flag agreement > 85%), and the 2023 replay (109 °F, heat index equal to IEM's within 0.1 °F, safest window in the early morning). Twelve cover the forecast inputs: the NWS-area check, the grid parser on a real api.weather.gov response (multi-hour values, °F and m/s units, −120 °F missing values, RH from dewpoint, pre-issue hours), the merge (NWS temperature/humidity/wind, Open-Meteo sunshine/pressure), every fallback with a fake fetch (NWS 500, grid 503 retried once, outside the U.S. with no NWS request, `/points` 404, stale grid, timeout, Open-Meteo down → NWS-only, both down → error), that the app's U.S. path reproduces the NWS-weather validation result and errs warm, and that the source labels exist in both languages and quote the measured backup bias. Five cover the record-day replay and the coach plan: the replay through the plan view gives exactly the validation replay's WBGT and flags; the coach plan for Aug 24, 2023 picks 6–8 AM (green) and counts every black-flag hour; edge cases (no window fits, whole-day hours, a forecast spanning three local days across the end of daylight saving time); the share text in English and Spanish (every hour, the window, 911, the replay label, no English words left in the Spanish); and the page wiring (button above the form, print CSS that prints only the sheet with one page per language). 54 tests in total; all 54 pass (re-run Oct 10, 2026).
 
 ## Limitations (being honest)
 
@@ -136,6 +142,17 @@ The tests check the Liljegren globe and wet-bulb temperatures and end-to-end WBG
 - Alerts when the next practice window turns high-risk
 - More languages (Vietnamese, Chinese, and Urdu are widely spoken in the Houston area), reviewed by native speakers
 - A native-speaker review of the Spanish
+
+## Data sources
+
+- **Live forecast:** National Weather Service gridded forecast (api.weather.gov) for U.S. temperature, humidity and wind; Open-Meteo Forecast API for sunshine and pressure, and for everything outside the U.S. or when the NWS fails; Open-Meteo Geocoding for place search. Free, no API keys.
+- **Validation snapshot** (`data/validation/`): the NWS and Open-Meteo forecasts for 8 Houston-area points archived on Oct 10, 2026.
+- **Record-day replay:** IAH hourly reports from the Iowa Environmental Mesonet ASOS archive, plus Open-Meteo ERA5 sunshine and pressure.
+- **Rules and thresholds:** Texas UIL heat plan, OSHA/NIOSH heat-stress limits, NWS heat-index equation (full list below).
+
+## AI assistance
+
+This project was built with help from an AI assistant (Hark), which drafted code, tests and copy under Aariv Patel's direction. The app calls no AI service at runtime: every number comes from the published formulas and thresholds listed below, and the tests check them against reference implementations and official values.
 
 ## Sources
 
