@@ -17,6 +17,7 @@ import {
   inNwsArea, nwsHourly, mergeInputs, nwsOnlyHours, rhFromDewpoint, getForecast, fetchNwsGrid, NWS_USER_AGENT, NWS_MAX_AGE_MS,
 } from "../js/forecast.js";
 import { REPLAY, replayHours, dayKey, planDays, coachPlan, coachPlanText } from "../js/plan.js";
+import { getForecastCached, CACHE_TTL_MS } from "../js/forecast.js";
 import { parseQuery, rankPlaces, autoPick, searchPlaces, US_STATES } from "../js/places.js";
 
 let passed = 0;
@@ -752,9 +753,39 @@ test("all-clear: only when every allowed hour is green/lower risk (EN/ES strings
   assert.ok(fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8").includes("allClear(scored, allowed)"), "wired into the safest-window card");
 });
 
+{
+  const mem = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) }; };
+  const om = { latitude: 29.7, longitude: -95.3, utc_offset_seconds: -18000, timezone: "America/Chicago", timezone_abbreviation: "CDT",
+    hourly: { time: ["2026-10-11T12:00"], temperature_2m: [30], relative_humidity_2m: [50], wind_speed_10m: [10], shortwave_radiation: [500], direct_radiation: [400], diffuse_radiation: [100], surface_pressure: [1010], cloud_cover: [10] } };
+  let calls = 0, mode = "ok";
+  const f = async () => { calls++; if (mode === "429") return { ok: false, status: 429, json: async () => ({ reason: "rate" }) }; return { ok: true, status: 200, json: async () => om }; };
+  atest("forecast cache: repeat lookup within 30 min makes no new requests", async () => {
+    const st = mem(); const t0 = 1e12;
+    const a = await getForecastCached(29.7, -95.3, { storage: st, now: t0, fetchImpl: f, useNws: false });
+    assert.equal(a.cachedAt, null); const n = calls;
+    const b = await getForecastCached(29.7, -95.3, { storage: st, now: t0 + 10 * 60e3, fetchImpl: f, useNws: false });
+    assert.equal(calls, n); assert.equal(b.cachedAt, t0);
+  });
+  atest("forecast cache: 429 after expiry falls back to the saved answer up to 3 h, then throws", async () => {
+    const st = mem(); const t0 = 1e12; mode = "ok";
+    await getForecastCached(29.7, -95.3, { storage: st, now: t0, fetchImpl: f, useNws: false });
+    mode = "429";
+    const b = await getForecastCached(29.7, -95.3, { storage: st, now: t0 + CACHE_TTL_MS + 60e3, fetchImpl: f, useNws: false });
+    assert.equal(b.cachedAt, t0);
+    await assert.rejects(getForecastCached(29.7, -95.3, { storage: st, now: t0 + 4 * 3600e3, fetchImpl: f, useNws: false }));
+    mode = "ok";
+  });
+  atest("forecast cache: no storage still works; EN/ES label has {n}", async () => {
+    const r = await getForecastCached(29.7, -95.3, { fetchImpl: f, useNws: false, now: 2e12 });
+    assert.equal(r.cachedAt, null);
+    assert.ok(STRINGS.en.cachedAgo.includes("{n}") && STRINGS.es.cachedAgo.includes("{n}"));
+  });
+}
+
 for (const [name, fn] of atests) {
   try { await fn(); passed++; console.log("  ok  " + name); }
   catch (e) { console.error("  FAIL " + name + "\n       " + e.message); process.exitCode = 1; }
 }
+
 
 console.log(`\n${passed} tests passed${process.exitCode ? " (with failures above)" : ""}.`);
