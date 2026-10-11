@@ -16,10 +16,11 @@
       <div>
         <h1>HeatWise</h1>
         <p class="tagline" data-i18n="tagline"></p>
+        <p class="toplink"><a href="#validation" data-i18n="validationLink"></a></p>
       </div>
       <div class="lang" role="group" aria-label="Language / Idioma">
-        <button type="button" data-lang="en" aria-pressed="true" lang="en" aria-label="English">EN</button>
-        <button type="button" data-lang="es" aria-pressed="false" lang="es" aria-label="Español">ES</button>
+        <button type="button" data-lang="en" aria-pressed="true" lang="en" aria-label="EN, English">EN</button>
+        <button type="button" data-lang="es" aria-pressed="false" lang="es" aria-label="ES, Español">ES</button>
       </div>
     </div>
   </header>
@@ -196,6 +197,11 @@
         <a href="https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml" target="_blank" rel="noopener">NWS Heat Index</a> ·
         <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (CC BY 4.0)</p>
       <p class="small muted" data-i18n="disclaimer"></p>
+    </section>
+
+    <section class="card validation" id="validation" aria-labelledby="validationTitle">
+      <h2 id="validationTitle">Validation: does HeatWise agree with the National Weather Service?</h2>
+      <div id="validationBody" aria-live="polite"><noscript><p>The validation study needs JavaScript. The full write-up, with the same numbers, is in the README on GitHub.</p></noscript></div>
     </section>
   </main>
 
