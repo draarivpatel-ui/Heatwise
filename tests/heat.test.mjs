@@ -17,7 +17,7 @@ import {
   inNwsArea, nwsHourly, mergeInputs, nwsOnlyHours, rhFromDewpoint, getForecast, fetchNwsGrid, NWS_USER_AGENT, NWS_MAX_AGE_MS,
 } from "../js/forecast.js";
 import { REPLAY, replayHours, dayKey, planDays, coachPlan, coachPlanText } from "../js/plan.js";
-import { getForecastCached, CACHE_TTL_MS } from "../js/forecast.js";
+import { getForecastCached, CACHE_TTL_MS, zoneLabel } from "../js/forecast.js";
 import { parseQuery, rankPlaces, autoPick, searchPlaces, US_STATES } from "../js/places.js";
 
 let passed = 0;
@@ -726,6 +726,20 @@ test("place search: Houston-area towns open straight away; truly ambiguous names
   assert.equal(autoPick(rankPlaces([G("Sugar Land", "Texas", "US", 88156)])).name, "Sugar Land, Texas, US");
   assert.equal(autoPick(rankPlaces([G("A", "Texas", "US", 500), G("A", "Ohio", "US")])), null);
   assert.ok(rankPlaces(GEO_FX.Houston.concat(GEO_FX.Katy)).length <= 5);
+});
+
+test("zone label: one abbreviation normally, both when the 48 h cross a clock change (DST-aware, from the IANA zone)", () => {
+  const ms = (iso) => Date.parse(iso);
+  assert.equal(zoneLabel("America/Chicago", ms("2026-07-01T12:00Z"), ms("2026-07-03T11:00Z")), "CDT");
+  assert.equal(zoneLabel("America/Chicago", ms("2026-01-10T12:00Z"), ms("2026-01-12T11:00Z")), "CST");
+  // Sun Nov 1, 2026 2:00 AM CDT -> 1:00 AM CST: a 48 h plan from Oct 31 shows both
+  assert.equal(zoneLabel("America/Chicago", ms("2026-10-31T15:00Z"), ms("2026-11-02T14:00Z")), "CDT \u2192 CST");
+  assert.equal(zoneLabel("America/Chicago", ms("2026-03-07T15:00Z"), ms("2026-03-09T14:00Z")), "CST \u2192 CDT");
+  assert.equal(zoneLabel("America/Phoenix", ms("2026-10-31T15:00Z"), ms("2026-11-02T14:00Z")), "MST", "no DST in Arizona");
+  assert.equal(zoneLabel("Not/AZone", 0, 1, "GMT+2"), "GMT+2", "bad zone falls back to the API's abbreviation");
+  assert.equal(zoneLabel(undefined, 0, 1, ""), "");
+  const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  assert.ok(app.includes("zoneLabel(state.data.tz, visible[0].t, visible[visible.length - 1].t, state.data.tzAbbr)"), "plan header uses the hours actually on screen");
 });
 
 test("place search: same-looking choices are told apart (county, else coordinates); labels are unique", () => {

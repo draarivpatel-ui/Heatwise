@@ -189,6 +189,14 @@ export async function fetchOpenMeteo(lat, lon, { fetchImpl = fetch, timeoutMs = 
   return { hours, tz: j.timezone, tzAbbr: j.timezone_abbreviation };
 }
 
+/** Zone label for the hours on screen: "CDT", or "CDT → CST" when the 48 h cross a clock change,
+ *  so no hour is labelled with the wrong offset. Falls back to the API's abbreviation. */
+export function zoneLabel(tz, firstMs, lastMs, fallback = "") {
+  const a = tz ? tzAbbrFor(tz, firstMs) : "", b = tz ? tzAbbrFor(tz, lastMs) : "";
+  if (!a) return fallback || "";
+  return a === b || !b ? a : `${a} → ${b}`;
+}
+
 function tzAbbrFor(tz, ms) {
   try { return new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "short" }).formatToParts(new Date(ms)).find((p) => p.type === "timeZoneName")?.value || ""; }
   catch { return ""; }

@@ -3,7 +3,7 @@ A stubbed geocoding answer holds one 58-letter real place name and three same-lo
   1. the picker lists 4 distinct labels (county added where the names collide);
   2. no sideways scroll at 390 px with the picker open, and every choice fits on screen;
   3. picking the long name loads its plan with no sideways scroll;
-  4. the same in Spanish; no page errors.
+  4. the plan header names the time zone (CDT), the same in Spanish; no page errors.
 Usage: python3 tests/browser/place_picker_qa.py  (CHROME_PATH=/usr/bin/chromium optional)"""
 import re, json, os, sys, subprocess, time, math, socket
 from playwright.sync_api import sync_playwright
@@ -57,6 +57,8 @@ with sync_playwright() as p:
         pg.wait_for_selector("#results:not([hidden])", timeout=10000); pg.wait_for_timeout(500)
         sw = pg.evaluate("document.documentElement.scrollWidth")
         check(f"{lang} 3 plan for the 58-letter place: no sideways scroll at 390 px", sw <= 390, sw)
+        meta = pg.text_content("#forecastMeta")
+        check(f"{lang} 3 plan header names the time zone from the IANA zone (CDT for America/Chicago in October)", "(CDT)" in meta or "(CDT \u2192 CST)" in meta, meta)
         ctx.close()
     check("4 no page errors", not errors, errors)
     b.close()

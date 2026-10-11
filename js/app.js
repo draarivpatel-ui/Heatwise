@@ -8,7 +8,7 @@ import {
 } from "./heat.js";
 import { STRINGS, PRESETS } from "./i18n.js";
 import { renderValidation } from "./validation-ui.js";
-import { getForecastCached } from "./forecast.js";
+import { getForecastCached, zoneLabel } from "./forecast.js";
 import { searchPlaces } from "./places.js";
 import { REPLAY, replayHours, planDays, coachPlan, coachPlanText, dayKey } from "./plan.js";
 
@@ -240,7 +240,8 @@ function render(scrollTo = false) {
   $("chartTitle").textContent = replay ? t("chartTitleReplay") : t("chartTitle");
   const model = scored.some((h) => h.model === "liljegren") ? t("modelLiljegren") : t("modelBom");
   const where = state.data.isSample ? "" : replay ? `${state.data.place.name} · ` : `${t("forecastFor")} ${state.data.place.label === "myLocation" ? t("myLocation") : state.data.place.name} · `;
-  $("forecastMeta").textContent = `${where}${t("timesIn")}${state.data.tzAbbr ? " (" + state.data.tzAbbr + ")" : ""} · ${model}`;
+  const zone = visible.length ? zoneLabel(state.data.tz, visible[0].t, visible[visible.length - 1].t, state.data.tzAbbr) : state.data.tzAbbr;
+  $("forecastMeta").textContent = `${where}${t("timesIn")}${zone ? " (" + zone + ")" : ""} · ${model}`;
   renderSource(visible);
   $("uilNote").hidden = !uil;
   $("acclAthlete").hidden = !uil;
