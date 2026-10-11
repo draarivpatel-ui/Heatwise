@@ -5,37 +5,18 @@
 //    and hour (api.weather.gov gridpoints, NDFD).
 // 2. WBGT agreement: HeatWise's Liljegren WBGT compared with the NWS operational WBGT forecast,
 //    (a) with the same temperature, humidity and wind as the NWS ("same inputs"; only sunshine comes
-//    from Open-Meteo, because the NWS grid has no solar radiation), and (b) end to end, exactly as the
-//    app runs it on Open-Meteo's forecast.
+//    from Open-Meteo, because the NWS grid has no solar radiation), (b) end to end through the app's
+//    U.S. input path (forecast.js: NWS grid merged with Open-Meteo sunshine), and (c) end to end through
+//    the Open-Meteo-only fallback the app uses outside the U.S. or when the NWS is unavailable.
 // 3. Replay of a documented extreme day (Houston IAH, Aug 24 2023) from archived observations.
 //
 // Everything is framed as AGREEMENT with the NWS, not accuracy: the NWS numbers are forecasts too.
 import { heatIndexF, cToF, estimateWbgt, uilFlag, UIL_FLAGS, scoreHours, bestWindow, hourAllowed, localHour } from "./heat.js";
+import { durationHours, expandSeries, isValidC, nwsHourly, mergeInputs } from "./forecast.js";
 
-/** Hours in an ISO-8601 duration such as "PT1H", "PT6H", "P1D", "P1DT3H". */
-export function durationHours(iso) {
-  const m = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?$/.exec(iso || "");
-  if (!m) throw new Error(`Bad ISO duration: ${iso}`);
-  return Number(m[1] || 0) * 24 + Number(m[2] || 0);
-}
-
-/**
- * Expand an NWS gridpoint series ([{validTime:"2026-10-10T15:00:00+00:00/PT3H", value}]) into one
- * value per UTC hour: Map(epochMs -> value). A value valid for 3 hours appears 3 times.
- */
-export function expandSeries(values) {
-  const out = new Map();
-  for (const v of values || []) {
-    const [start, dur] = v.validTime.split("/");
-    const t0 = Date.parse(start);
-    const n = durationHours(dur);
-    for (let i = 0; i < n; i++) out.set(t0 + i * 3600e3, v.value);
-  }
-  return out;
-}
-
-/** NWS grids use -120 °F (-84.4 °C) and null as "missing". Anything below -50 °C is treated as missing. */
-export const isValidC = (v) => typeof v === "number" && Number.isFinite(v) && v > -50;
+// durationHours, expandSeries and isValidC live in forecast.js (the app uses them to read NWS grids);
+// they are re-exported here so the study and the tests can keep importing them from one place.
+export { durationHours, expandSeries, isValidC };
 
 /** Summary statistics of a list of differences (HeatWise minus NWS), in °F. */
 export function errorStats(diffs) {
@@ -104,10 +85,30 @@ export function compareHeatIndex(dataset, { minF = HI_MIN_F, forecastOnly = true
 }
 
 /**
+ * Rebuild the raw NWS grid series for one archived point (the snapshot stores one row per hour) so the
+ * study can feed it through the app's own parser, nwsHourly(), exactly as a live response would be.
+ */
+export function gridPropsFromSnapshot(point) {
+  const series = (c, uom) => ({ uom, values: point.rows.map((r) => ({ validTime: `${r[0].replace("Z", "+00:00")}/PT1H`, value: r[col(c)] })) });
+  return {
+    updateTime: point.updateTime,
+    temperature: series("tC", "wmoUnit:degC"), dewpoint: series("tdC", "wmoUnit:degC"),
+    relativeHumidity: series("rh", "wmoUnit:percent"), windSpeed: series("windKmh", "wmoUnit:km_h-1"),
+  };
+}
+
+/** Open-Meteo snapshot rows as the hour objects the app builds from a live Open-Meteo response. */
+export const omHoursFromSnapshot = (omPoint) => omPoint.rows.map((q) => ({ t: Date.parse(q[0]), tempC: q[1], rh: q[2], radiation: q[3], wind10: q[4], pressure: q[5] }));
+
+/**
  * WBGT agreement. `om` is data/validation/openmeteo.json: per point, rows aligned to the same UTC
  * hours: [t, tC, rh, radiation W/m², wind10 m/s, pressure hPa].
- * mode "same": NWS temperature, RH and wind (km/h -> m/s), Open-Meteo sunshine and pressure.
- * mode "app":  everything from Open-Meteo, exactly as the app runs.
+ * mode "same":     NWS temperature, RH and wind (km/h -> m/s), Open-Meteo sunshine and pressure,
+ *                  taken straight from the snapshot rows.
+ * mode "app":      the app's U.S. path: the snapshot rebuilt as an NWS grid, read by nwsHourly() and
+ *                  merged into the Open-Meteo hours by mergeInputs() (forecast.js), as the app runs.
+ * mode "fallback": everything from Open-Meteo (the app outside the U.S. or when the NWS fails; this was
+ *                  the app's only path before the NWS input was added).
  * Returns pairs plus error stats and how often the Texas UIL flag (Class 3) agrees.
  */
 export function compareWbgt(dataset, om, { mode = "same", uilClass = 3, forecastOnly = true } = {}) {
@@ -116,6 +117,7 @@ export function compareWbgt(dataset, om, { mode = "same", uilClass = 3, forecast
     const o = om.points.find((q) => q.id === p.id);
     if (!o) continue;
     const byT = new Map(o.rows.map((r) => [r[0], r]));
+    const appByT = mode === "app" ? new Map(mergeInputs(omHoursFromSnapshot(o), nwsHourly(gridPropsFromSnapshot(p))).map((h) => [h.t, h])) : null;
     for (const r of forecastRows(p, forecastOnly)) {
       const wb = r[col("wbgtC")];
       const q = byT.get(r[col("t")]);
@@ -123,12 +125,14 @@ export function compareWbgt(dataset, om, { mode = "same", uilClass = 3, forecast
       const tMs = Date.parse(r[col("t")]);
       const h = mode === "same"
         ? { t: tMs, tempC: r[col("tC")], rh: r[col("rh")], radiation: q[3], wind10: r[col("windKmh")] / 3.6, pressure: q[5] }
+        : mode === "app" ? appByT.get(tMs)
         : { t: tMs, tempC: q[1], rh: q[2], radiation: q[3], wind10: q[4], pressure: q[5] };
+      if (!h) continue;
       if (!isValidC(h.tempC) || !(h.rh >= 0) || !Number.isFinite(h.wind10)) continue;
       const hwC = estimateWbgt(h, p).wbgt;
       if (!Number.isFinite(hwC)) continue;
       const fHw = uilFlag(hwC, uilClass), fNws = uilFlag(wb, uilClass);
-      pairs.push({ point: p.id, t: r[col("t")], day: q[3] > 0, nws: cToF(wb), hw: cToF(hwC), diff: cToF(hwC) - cToF(wb), fHw, fNws });
+      pairs.push({ point: p.id, t: r[col("t")], day: q[3] > 0, src: h.src || mode, nws: cToF(wb), hw: cToF(hwC), diff: cToF(hwC) - cToF(wb), fHw, fNws });
     }
   }
   const sub = (f) => {
