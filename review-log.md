@@ -81,3 +81,22 @@ immersion is the best method, never leave them alone, when in doubt cool and cal
   rebuild: https://aariv.me/Heatwise/ serves files identical to the repo (index.html, app.js, i18n.js,
   styles.css, README.md, review-log.md hashes match), and the same headless suite run against the live URL
   gave 0 errors, no overflow at 390 px, 0 axe violations (EN + ES), and the same error-state results.
+
+## 2026-10-10 (evening): validation study, the top recommendation from the winning-patterns research
+
+Built because EurekaDev is "a science fair blended with a hackathon" and the Coding track says citations and evidence are a bonus.
+
+| What | Detail |
+|---|---|
+| NWS agreement study | `js/validation.js` (pure functions) + `scripts/fetch-validation-data.mjs`. 8 Houston-area points (downtown Houston, Sugar Land, Katy, Pearland, Baytown, Tomball, Conroe, Galveston), NWS HGX gridpoint forecast issued 2026-10-10 21:06 UTC, 1,472 forecast point-hours (Oct 10 4 PM – Oct 18 7 AM CT). Archived in `data/validation/` (each file < 90 KB). |
+| Heat index result | 770 hours ≥ 80 °F: bias **+0.01 °F**, MAE **0.28 °F**, RMSE 0.33 °F, 99.1% within 1 °F, 100% within 2 °F, max 1.04 °F, 89.1% identical after rounding, r = 0.998. |
+| WBGT, same weather | HeatWise Liljegren on NWS T/RH/wind (+ Open-Meteo sunshine/pressure) vs NWS WBGT, 1,376 hours: bias +0.56 °F (day +1.54, night −0.42), MAE 1.07 °F (day 1.64, night 0.50), r = 0.979. UIL Class 3 flag agreement 90.6% (99.9% within one flag); HeatWise was the more cautious flag in 118 of 129 disagreements. |
+| WBGT, end to end | App pipeline (Open-Meteo inputs) vs NWS WBGT: bias **−3.92 °F**, MAE 4.33 °F, flag agreement 86.2%; HeatWise's flag was lower in 163 of 190 disagreements. Cause: Open-Meteo's forecast averaged 4.2 °F cooler and 8.7 RH points drier than NWS over the same hours. Reported openly in the app, README and Devpost text; listed as the main "what's next" (use NWS grids as input for U.S. places). |
+| 2023 replay | IAH, Aug 24, 2023 (109 °F, tied all-time record; NWS HGX climate summary). IEM ASOS hourly METARs + Open-Meteo ERA5 sunshine. Peak heat index 117 °F (3:53 PM report), peak WBGT 94.4 °F (4:53 PM), UIL black 4 h + red 3 h, safest 2-h window 6–8 AM (green, WBGT ≤ 78.1 °F). HeatWise heat index = IEM's independent value within 0.01 °F for all 24 reports. |
+| Methods choices | Only hours valid at/after the NWS issue time (the grid's few past hours aren't refreshed: e.g. Katy showed a 109 °F heat index with a 79 °F WBGT); NWS missing value −120 °F dropped; heat index compared only ≥ 80 °F where it's defined. |
+| App | New "Validation" section after "How the math works" (EN + ES): 3 result tiles, heat-index and WBGT scatter plots with 1:1 line and ±2 °F band, per-point table, replay chart (WBGT bars by UIL flag, heat-index line, safest-window box), methods & limits, 12 cited sources. All numbers are recomputed in the browser from the archived data (nothing hard-coded). Header link "Validation ↓". |
+| Also fixed | axe `label-content-name-mismatch` on the EN/ES buttons (aria-label now "EN, English" / "ES, Español"). |
+| Tests | 29 → **37** passing: ISO-duration/series expansion, missing values, statistics, synthetic heat-index comparison (exclusions), real-snapshot heat index (MAE < 0.5 °F), real-snapshot WBGT (night MAE < 1 °F, flag agreement > 85%), 2023 replay, section consistency + data files < 90 KB. |
+| Headless check | Chromium (Playwright) at 1280 px and 390 px, EN and ES, local and live: 0 console/page errors, no horizontal overflow (only the per-point table scrolls inside its own scroll box at 390 px), axe-core WCAG 2.0/2.1 A/AA + best practice: 0 violations on the whole page with the sample plan open. |
+| Live | Pushed with `push_repo.sh`; https://aariv.me/Heatwise/ serves files byte-identical to the local copies (index.html, app.js, validation.js, validation-ui.js, i18n.js, styles.css, all three data files). |
+| Limits / still open | One October forecast issue (few very hot hours); no WBGT-meter ground truth; README, devpost.md and the video script updated. `heatwise.zip` in the working folder predates this change (it isn't pushed). |
