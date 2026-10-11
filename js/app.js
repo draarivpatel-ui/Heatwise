@@ -120,7 +120,8 @@ async function loadPlace(place, { force = false } = {}) {
     console.warn(e);
     // Keep the place so "Try again" and the share link still point at it, but show the labelled sample day.
     loadSample(false, place);
-    setStatus(t("errApi"), true);
+    // No connection at all (the browser says so) gets its own message, not "try again in a minute".
+    setStatus(t(navigator.onLine === false ? "errOffline" : "errApi"), true);
     $("retryBtn").hidden = false;
     $("refreshBtn").hidden = true;
     if (force) restoreFocus(returnTo, $("retryBtn"));
@@ -695,12 +696,15 @@ $("planForm").addEventListener("submit", (e) => {
   if ($("place").value.trim()) doSearch();
   else { setStatus(t("needPlace"), true); $("place").focus(); }
 });
+const REWORD_KEYS = ["refreshed", "errApi", "errOffline", "errNet", "needPlace"];
 document.querySelectorAll("[data-lang]").forEach((b) => b.addEventListener("click", () => {
   state.lang = b.dataset.lang; fmtCache.clear(); applyLang(); if (state.data) syncUrl();
   if (state.data?.cachedAt && !$("refreshBtn").hidden) showCacheStatus();
-  // Re-word one-line notes that are already showing ("Forecast updated", "N places match").
+  // Re-word one-line notes that are already showing ("Forecast updated", the error lines, "N places match").
   const st = $("status").textContent;
-  if (Object.values(STRINGS).some((S) => S.refreshed === st)) setStatus(t("refreshed"));
+  const err = $("status").classList.contains("error");
+  const k = REWORD_KEYS.find((key) => Object.values(STRINGS).some((S) => S[key] === st));
+  if (k) setStatus(t(k), err);
   const n = $("placeResults").hidden ? 0 : $("placeResults").querySelectorAll("button").length;
   if (n && Object.values(STRINGS).some((S) => S.pickPlace.replace("{n}", n) === st)) setStatus(t("pickPlace").replace("{n}", n));
 }));
