@@ -161,3 +161,8 @@ Tests 63 → 66 (`node tests/heat.test.mjs`: force bypass + resave, forced refre
 - Found: with no connection and nothing saved, the error said "Couldn't get the forecast ... Tap Try again in a minute", which is wrong advice when the device is offline; and error lines stayed in the old language after an EN/ES switch.
 - Fixed: new errOffline line (EN/ES) used when navigator.onLine is false; status lines refreshed/errApi/errOffline/errNet/needPlace are re-worded on language switch and keep their error style.
 - Tests: unit 68 -> 70 (offline cache fallback + fail-fast, strings/wiring); new tests/browser/offline_429_qa.py (13 checks); GitHub Actions workflow runs unit + 3 browser suites.
+
+## Oct 11, 2026 ~7:25 PM ET: works with no signal (team-b)
+- Gap: HeatWise already saved the last forecast per place, but with no service worker the page itself could not load offline, so the saved forecast was useless at a field with no signal.
+- Added sw.js (network first, cache fallback, weather APIs never cached, only heatwise-* caches pruned, registered only over http(s)); replay data precached.
+- Tests: unit 70 -> 71 (service worker); offline_429_qa.py 13 -> 16 (offline reload of a shared link shows the saved, labelled forecast; replay loads offline).
