@@ -243,3 +243,29 @@ export async function getForecast(lat, lon, { fetchImpl = fetch, now = Date.now(
   }
   throw om.reason;
 }
+
+/** Cache lifetime for a repeat lookup, and how long an old answer may stand in when both APIs fail. */
+export const CACHE_TTL_MS = 30 * 60e3;
+export const CACHE_STALE_MAX_MS = 3 * 3600e3;
+const cacheKey = (lat, lon) => `heatwise:fc:${lat.toFixed(2)},${lon.toFixed(2)}`;
+
+/**
+ * getForecast with a small localStorage-style cache (`storage` has getItem/setItem). A repeat lookup
+ * within 30 min reuses the last good answer (no API calls); if the APIs fail (e.g. HTTP 429), an
+ * answer up to 3 h old is reused. Result gets cachedAt (epoch ms) when it came from the cache, else null.
+ */
+export async function getForecastCached(lat, lon, { storage = null, now = Date.now(), ...opts } = {}) {
+  const key = cacheKey(lat, lon);
+  let hit = null;
+  try { const raw = storage?.getItem(key); if (raw) hit = JSON.parse(raw); } catch { hit = null; }
+  const age = hit && typeof hit.savedAt === "number" ? now - hit.savedAt : Infinity;
+  if (hit?.data && age >= 0 && age <= CACHE_TTL_MS) return { ...hit.data, cachedAt: hit.savedAt };
+  try {
+    const data = await getForecast(lat, lon, { now, ...opts });
+    try { storage?.setItem(key, JSON.stringify({ savedAt: now, data })); } catch { /* quota: ignore */ }
+    return { ...data, cachedAt: null };
+  } catch (e) {
+    if (hit?.data && age >= 0 && age <= CACHE_STALE_MAX_MS) return { ...hit.data, cachedAt: hit.savedAt };
+    throw e;
+  }
+}
