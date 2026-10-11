@@ -24,6 +24,17 @@ HeatWise turns a free weather forecast into a personal heat-safety plan for stud
 
 Built for **EurekaDev 2026**, Coding Track, Problem in the Community.
 
+## Judge it in 60 seconds
+
+1. Open **https://aariv.me/Heatwise/?replay=iah2023**: Houston's record day (Aug 24, 2023, 109°F at IAH) runs through the normal plan view, labelled HISTORICAL REPLAY. For football it picks 6–8 AM (green) as the safest window, while noon–6 PM is red or black flag (black at 1 PM and 3–5 PM).
+2. Type your own town in **Where** (any U.S. place uses the National Weather Service grid). Switch **EN / ES** at the top; everything, including the printed coach sheet, changes language.
+3. Run the tests (Node 18+, no install):
+   ```bash
+   git clone https://github.com/draarivpatel-ui/Heatwise && cd Heatwise
+   node tests/heat.test.mjs        # ends with: 70 tests passed.
+   ```
+   Optional browser checks (rate limits, offline, print) are listed under **Tests** below; GitHub Actions runs them on every push.
+
 ---
 
 ## Why
