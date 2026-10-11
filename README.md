@@ -107,6 +107,7 @@ data/validation/  archived NWS + Open-Meteo forecast snapshot (Oct 10, 2026) and
 scripts/fetch-validation-data.mjs  re-downloads the validation data from the NWS, Open-Meteo and IEM
 tests/heat.test.mjs  unit tests (node tests/heat.test.mjs)
 tests/make_reference.py  regenerates the pywbgt/pvlib reference values in tests/fixtures/
+tests/browser/           optional Chromium print checks (coach sheet, replay, full plan)
 review-log.md     what each review pass found and fixed
 ```
 
@@ -127,6 +128,15 @@ python3 -m http.server 8000     # ES modules need http://, not file://
 node tests/heat.test.mjs
 ```
 The tests check the Liljegren globe and wet-bulb temperatures and end-to-end WBGT against pywbgt reference values, the sun position against NREL SPA (pvlib), the heat index against NWS chart values, the BoM fallback against BoM's worked example (29.4 °C / 59% RH → ≈30 °C), the UIL flag edges for Class 2 and 3, OSHA/NIOSH limits and clothing factors, the best-window algorithm (including the brute-force comparison), hydration and acclimatization math, DST-aware local hours, that every English string has a Spanish one, and that the guidance text quotes the same numbers as the code. Eight more tests cover the validation study: NWS duration parsing and missing-value handling, the agreement statistics, the archived NWS snapshot (heat index MAE < 0.5 °F, UIL flag agreement > 85%), and the 2023 replay (109 °F, heat index equal to IEM's within 0.1 °F, safest window in the early morning). Twelve cover the forecast inputs: the NWS-area check, the grid parser on a real api.weather.gov response (multi-hour values, °F and m/s units, −120 °F missing values, RH from dewpoint, pre-issue hours), the merge (NWS temperature/humidity/wind, Open-Meteo sunshine/pressure), every fallback with a fake fetch (NWS 500, grid 503 retried once, outside the U.S. with no NWS request, `/points` 404, stale grid, timeout, Open-Meteo down → NWS-only, both down → error), that the app's U.S. path reproduces the NWS-weather validation result and errs warm, and that the source labels exist in both languages and quote the measured backup bias. Five cover the record-day replay and the coach plan: the replay through the plan view gives exactly the validation replay's WBGT and flags; the coach plan for Aug 24, 2023 picks 6–8 AM (green) and counts every black-flag hour; edge cases (no window fits, whole-day hours, a forecast spanning three local days across the end of daylight saving time); the share text in English and Spanish (every hour, the window, 911, the replay label, no English words left in the Spanish); and the page wiring (button above the form, print CSS that prints only the sheet with one page per language). Four cover place search (`js/places.js`): Houston-area towns such as Houston, Katy and Spring open straight away while truly ambiguous names (Pasadena TX vs CA) still ask, a ", TX" style state hint decides it, a stalled connection gives up after 8 seconds instead of hanging on "Searching…", and on a phone the plan's answer comes before the source notes. Seven cover the saved forecast and **Refresh now**: a repeat lookup within 30 minutes makes no new requests, a rate limit (HTTP 429) after that falls back to the saved answer for up to 3 hours, the app still works with no storage, a forced refresh skips the 30-minute reuse and re-saves, a forced refresh hit by a 429 keeps the saved answer and labels it honestly, the English/Spanish labels and the button wiring, and the keyboard/screen-reader behaviour (results announced in the status line, focus put back after a refresh, a visible focus ring on the status line). 68 tests in total; all 68 pass (re-run Oct 11, 2026). One of them checks that the plan defines WBGT in plain words in both languages.
+
+**Print checks** (optional; Python 3 + Playwright + Chromium + poppler's `pdfinfo`/`pdftotext`; set `CHROME_PATH=/usr/bin/chromium` to use a system Chromium). Both serve the folder locally, stub the weather APIs, and print real Letter PDFs:
+```bash
+python3 tests/browser/coach_print_qa.py   # 36 coach-sheet PDFs: football/roofing x EN/ES page x 3 days x sheet EN/ES/Both -> 1 page per language
+python3 tests/browser/print_plan_qa.py    # 54 checks: the Aug 24, 2023 replay coach sheet says "Historical replay ... not a forecast" (EN/ES) and stays 1 page per language;
+                                          # the full "Print / save PDF" plan (48-hour table) prints the HISTORICAL REPLAY banner only for the replay,
+                                          # and its table header repeats on each page instead of sticking over the rows
+```
+Last run Oct 11, 2026: 36/36 coach-sheet PDFs and 54/54 print checks pass.
 
 ## Limitations (being honest)
 
