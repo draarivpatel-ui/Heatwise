@@ -8,6 +8,11 @@ import {
   UIL_CLASSES, WORKLOADS,
 } from "../js/heat.js";
 import { STRINGS, PRESETS } from "../js/i18n.js";
+import {
+  durationHours, expandSeries, isValidC, errorStats, correlation, compareHeatIndex, compareWbgt, forecastRows,
+  replayDay, histogram, NWS_COLS,
+} from "../js/validation.js";
+import { computeAll } from "../js/validation-ui.js";
 
 let passed = 0;
 function test(name, fn) {
@@ -267,6 +272,102 @@ test("guidance strings match the sources' numbers in both languages", () => {
     assert.ok(S.acclIntro.includes("7") && S.acclIntro.includes("14"), `${lang}: 7–14 days (NIOSH)`);
     assert.ok(/SYNTHETIC|SINTÉTICO/.test(S.errApi) && /SYNTHETIC|SINTÉTICO/.test(S.sampleBanner), `${lang}: fallback is labelled as not real`);
     assert.ok(S.windowTooLong(2).includes("2") && S.windowTooLong(1).includes("1"), `${lang}: UIL practice caps`);
+  }
+});
+
+// ---------- validation study (NWS agreement + 2023 replay) ----------
+const VDATA = (f) => JSON.parse(fs.readFileSync(new URL(`../data/validation/${f}`, import.meta.url)));
+const NWS = VDATA("nws-hgx.json"), OM = VDATA("openmeteo.json"), DAY = VDATA("replay-iah-2023-08-24.json");
+
+test("ISO durations and NWS series expansion", () => {
+  assert.equal(durationHours("PT1H"), 1);
+  assert.equal(durationHours("PT6H"), 6);
+  assert.equal(durationHours("P1D"), 24);
+  assert.equal(durationHours("P1DT3H"), 27);
+  assert.throws(() => durationHours("6 hours"));
+  const m = expandSeries([
+    { validTime: "2026-10-10T15:00:00+00:00/PT1H", value: 25 },
+    { validTime: "2026-10-10T16:00:00+00:00/PT3H", value: 26 },
+  ]);
+  assert.equal(m.size, 4);
+  assert.equal(m.get(Date.parse("2026-10-10T18:00:00Z")), 26);
+  assert.equal(m.get(Date.parse("2026-10-10T19:00:00Z")), undefined);
+});
+
+test("NWS missing values (null, -120 °F = -84.4 °C) are rejected", () => {
+  assert.ok(isValidC(30) && isValidC(-10));
+  assert.ok(!isValidC(null) && !isValidC(-84.44) && !isValidC(NaN) && !isValidC(undefined));
+});
+
+test("error statistics: bias, MAE, RMSE, within-1/2 and correlation", () => {
+  const s = errorStats([1, -1, 2, 0]);
+  near(s.bias, 0.5, 1e-12, "bias"); near(s.mae, 1, 1e-12, "mae"); near(s.rmse, Math.sqrt(1.5), 1e-12, "rmse");
+  near(s.within1, 0.75, 1e-12, "within1"); near(s.within2, 1, 1e-12, "within2"); assert.equal(s.maxAbs, 2);
+  near(correlation([1, 2, 3], [2, 4, 6]), 1, 1e-12, "r");
+  const h = histogram([-0.2, 0.1, 0.3, 5], 0.5, 1);
+  assert.equal(h.over, 1); assert.equal(h.bins.reduce((a, b) => a + b.n, 0), 3);
+});
+
+test("heat index comparison: exact copies agree, <80 °F, missing and pre-issue hours are excluded", () => {
+  const row = (iso, tF, rh, hiF) => [iso, fToC(tF), null, rh, hiF == null ? -84.44 : fToC(hiF), null, 10];
+  const ds = { points: [{ id: "x", updateTime: "2026-07-01T12:00:00+00:00", rows: [
+    row("2026-07-01T11:00Z", 95, 50, 200),            // before issue time: excluded
+    row("2026-07-01T12:00Z", 95, 50, heatIndexF(95, 50)),
+    row("2026-07-01T13:00Z", 100, 40, heatIndexF(100, 40)),
+    row("2026-07-01T14:00Z", 75, 60, 75),             // below 80 °F: excluded
+    row("2026-07-01T15:00Z", 92, 55, null),           // missing heat index: excluded
+  ] }] };
+  assert.deepEqual(NWS_COLS, ["t", "tC", "tdC", "rh", "hiC", "wbgtC", "windKmh"]);
+  assert.equal(forecastRows(ds.points[0]).length, 4);
+  const { stats } = compareHeatIndex(ds);
+  assert.equal(stats.n, 2);
+  near(stats.mae, 0, 1e-9, "exact copy");
+});
+
+test("real NWS snapshot: HeatWise heat index agrees with the NWS forecast (8 Houston-area points)", () => {
+  const { stats } = compareHeatIndex(NWS);
+  assert.equal(stats.points, 8);
+  assert.ok(stats.n >= 500, `n = ${stats.n}`);
+  assert.ok(Math.abs(stats.bias) < 0.2, `bias ${stats.bias}`);
+  assert.ok(stats.mae < 0.5, `MAE ${stats.mae}`);   // NWS rounds to whole °F, so ~0.25 is the floor
+  assert.equal(stats.within2, 1);
+  assert.ok(stats.roundedExact > 0.8, `rounded exact ${stats.roundedExact}`);
+});
+
+test("real NWS snapshot: WBGT agreement with the same weather inputs", () => {
+  const w = compareWbgt(NWS, OM, { mode: "same" });
+  assert.ok(w.stats.n >= 500, `n = ${w.stats.n}`);
+  assert.ok(w.night.mae < 1, `night MAE ${w.night.mae}`);      // no sun: both models reduce to near the wet bulb
+  assert.ok(w.stats.flagAgree > 0.85, `flag agreement ${w.stats.flagAgree}`);
+  assert.ok(w.stats.flagWithinOne > 0.98, `within one flag ${w.stats.flagWithinOne}`);
+  assert.ok(w.day.bias > 0, "HeatWise's in-sun WBGT runs warmer (more cautious) than the NWS by day");
+  const app = compareWbgt(NWS, OM, { mode: "app" });
+  assert.equal(app.stats.n, w.stats.n, "both WBGT comparisons use the same hours");
+});
+
+test("2023 replay: IAH Aug 24 hits 109 °F, heat index matches IEM, safest window is early morning", () => {
+  const rp = replayDay(DAY);
+  assert.equal(rp.rows.length, 24);
+  assert.equal(Math.max(...DAY.rows.map((r) => r[1])), 109, "record 109 °F (NWS climate summary)");
+  for (let i = 0; i < 24; i++) near(rp.rows[i].hiF, DAY.iemHeatIndexF[i], 0.1, `HI vs IEM, row ${i}`);
+  assert.ok(rp.rows.every((r) => r.model === "liljegren"));
+  assert.ok(rp.flagHours.black >= 1, "reaches the UIL black flag");
+  assert.ok(rp.rows.filter((r) => r.flag === "black").every((r) => r.hour >= 12 && r.hour <= 18), "black only in the afternoon");
+  assert.ok(rp.best && rp.rows[rp.best.start].hour >= 6 && rp.rows[rp.best.end].hour < 10, "window in the morning");
+  assert.ok(rp.bestRows.every((r) => r.flag === "green"));
+});
+
+test("validation section: numbers computed once, consistent, and the section sits after 'How the math works'", () => {
+  const R = computeAll(NWS, OM, DAY);
+  assert.ok(R.cautious.higher <= R.cautious.total && R.cautious.total > 0);
+  assert.ok(R.inputs.n > 0 && Number.isFinite(R.inputs.dT));
+  assert.ok(R.iemDiff < 0.1);
+  assert.equal(R.perPoint.length, 8);
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.ok(html.indexOf('id="validation"') > html.indexOf('id="mathTitle"'));
+  assert.ok(html.includes('href="#validation"'));
+  for (const f of ["nws-hgx.json", "openmeteo.json", "replay-iah-2023-08-24.json"]) {
+    assert.ok(fs.statSync(new URL(`../data/validation/${f}`, import.meta.url)).size < 90_000, `${f} must stay under the 90 KB push limit`);
   }
 });
 
