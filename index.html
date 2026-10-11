@@ -8,15 +8,23 @@
   <meta name="theme-color" content="#7c2d12" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%A1%EF%B8%8F%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="modulepreload" href="js/app.js" />
+  <link rel="modulepreload" href="js/i18n.js" />
+  <link rel="modulepreload" href="js/heat.js" />
+  <link rel="modulepreload" href="js/plan.js" />
+  <link rel="modulepreload" href="js/forecast.js" />
+  <link rel="modulepreload" href="js/places.js" />
+  <link rel="modulepreload" href="js/validation-ui.js" />
+  <link rel="modulepreload" href="js/validation.js" />
 </head>
 <body>
-  <a class="skip" href="#main" data-i18n="skip"></a>
+  <a class="skip" href="#main" data-i18n="skip">Skip to main content</a>
   <header class="top">
     <div class="wrap top-inner">
       <div>
         <h1>HeatWise</h1>
-        <p class="tagline" data-i18n="tagline"></p>
-        <p class="toplink"><a href="#validation" data-i18n="validationLink"></a></p>
+        <p class="tagline" data-i18n="tagline">Plan outdoor practice and work around the heat, hour by hour.</p>
+        <p class="toplink"><a href="#validation" data-i18n="validationLink">Validation: HeatWise vs the National Weather Service ↓</a></p>
       </div>
       <div class="lang" role="group" aria-label="Language / Idioma">
         <button type="button" data-lang="en" aria-pressed="true" lang="en" aria-label="EN, English">EN</button>
@@ -27,95 +35,95 @@
 
   <main class="wrap" id="main" tabindex="-1">
     <div class="replay-cta">
-      <button type="button" id="replayBtn" class="replay-btn" data-i18n="replayBtn"></button>
-      <p class="small" id="replayHint" data-i18n="replayHint"></p>
+      <button type="button" id="replayBtn" class="replay-btn" data-i18n="replayBtn">▶ Replay Houston's record day (Aug 24, 2023)</button>
+      <p class="small" id="replayHint" data-i18n="replayHint">See the plan HeatWise would have given a coach on the day Houston hit 109°F, built from that day's archived weather reports. A historical replay, not a forecast.</p>
     </div>
     <form id="planForm" class="grid2" autocomplete="off" novalidate>
       <section class="card" aria-labelledby="whereTitle">
-        <h2 id="whereTitle" data-i18n="whereTitle"></h2>
-        <label for="place" data-i18n="placeLabel"></label>
+        <h2 id="whereTitle" data-i18n="whereTitle">1. Where</h2>
+        <label for="place" data-i18n="placeLabel">City or ZIP code</label>
         <div class="row nowrap">
-          <input id="place" type="search" inputmode="search" enterkeyhint="search" data-i18n-placeholder="searchPlaceholder" aria-describedby="placeLabel" />
-          <button type="button" id="searchBtn" data-i18n="search"></button>
+          <input id="place" type="search" inputmode="search" enterkeyhint="search" data-i18n-placeholder="searchPlaceholder" aria-describedby="placeLabel" placeholder="e.g. Houston or 77479" />
+          <button type="button" id="searchBtn" data-i18n="search">Search</button>
         </div>
         <ul id="placeResults" class="results" hidden></ul>
         <div class="row">
-          <button type="button" id="geoBtn" class="ghost" data-i18n="useLocation"></button>
-          <button type="button" id="sampleBtn" class="ghost" data-i18n="trySample"></button>
+          <button type="button" id="geoBtn" class="ghost" data-i18n="useLocation">Use my location</button>
+          <button type="button" id="sampleBtn" class="ghost" data-i18n="trySample">Try a sample hot day</button>
         </div>
         <p id="placeLabel" class="place-label" aria-live="polite"></p>
       </section>
 
       <section class="card" aria-labelledby="whoTitle">
-        <h2 id="whoTitle" data-i18n="whoTitle"></h2>
-        <label for="preset" data-i18n="activity"></label>
+        <h2 id="whoTitle" data-i18n="whoTitle">2. What and who</h2>
+        <label for="preset" data-i18n="activity">Activity</label>
         <select id="preset"></select>
 
-        <label for="guideline" data-i18n="guideline"></label>
+        <label for="guideline" data-i18n="guideline">Safety guideline</label>
         <select id="guideline">
-          <option value="uil" data-i18n="gl_uil"></option>
-          <option value="osha" data-i18n="gl_osha"></option>
+          <option value="uil" data-i18n="gl_uil">Texas UIL: sports &amp; band</option>
+          <option value="osha" data-i18n="gl_osha">Work: OSHA/NIOSH limits</option>
         </select>
 
         <div id="uilFields">
-          <label for="uilClass" data-i18n="uilClass"></label>
+          <label for="uilClass" data-i18n="uilClass">UIL heat class</label>
           <select id="uilClass" aria-describedby="uilClassHint">
-            <option value="3" data-i18n="uil_3"></option>
-            <option value="2" data-i18n="uil_2"></option>
+            <option value="3" data-i18n="uil_3">Class 3 (incl. Houston area)</option>
+            <option value="2" data-i18n="uil_2">Class 2</option>
           </select>
-          <p id="uilClassHint" class="hint" data-i18n="uilClassHint"></p>
+          <p id="uilClassHint" class="hint" data-i18n="uilClassHint">UIL's WBGT map puts the Houston area and most of Texas in Class 3; parts of West Texas and the Panhandle are in lower classes. If you're not sure, check your district's heat plan.</p>
         </div>
 
         <div id="oshaFields" hidden>
-          <label for="workload" data-i18n="workload"></label>
+          <label for="workload" data-i18n="workload">Workload (OSHA category)</label>
           <select id="workload">
-            <option value="light" data-i18n="wl_light"></option>
-            <option value="moderate" data-i18n="wl_moderate"></option>
-            <option value="heavy" data-i18n="wl_heavy"></option>
-            <option value="veryHeavy" data-i18n="wl_veryHeavy"></option>
+            <option value="light" data-i18n="wl_light">Light – sitting/standing, slow walking</option>
+            <option value="moderate" data-i18n="wl_moderate">Moderate – steady walking, raking, light carts</option>
+            <option value="heavy" data-i18n="wl_heavy">Heavy – carrying loads, shoveling, roofing, landscaping</option>
+            <option value="veryHeavy" data-i18n="wl_veryHeavy">Very heavy – near-max pace, fitness training, climbing</option>
           </select>
-          <label class="check"><input id="acclimatized" type="checkbox" /> <span data-i18n="acclimatized"></span></label>
-          <label for="clothing" data-i18n="clothing"></label>
+          <label class="check"><input id="acclimatized" type="checkbox" /> <span data-i18n="acclimatized">Acclimatized (doing this in the heat for 1–2+ weeks)</span></label>
+          <label for="clothing" data-i18n="clothing">Clothing</label>
           <select id="clothing">
-            <option value="work" data-i18n="cl_work"></option>
-            <option value="cloth" data-i18n="cl_cloth"></option>
-            <option value="sms" data-i18n="cl_sms"></option>
-            <option value="polyolefin" data-i18n="cl_polyolefin"></option>
-            <option value="double" data-i18n="cl_double"></option>
-            <option value="vapor" data-i18n="cl_vapor"></option>
+            <option value="work" data-i18n="cl_work">Normal work or athletic clothes</option>
+            <option value="cloth" data-i18n="cl_cloth">Cloth coveralls (+0 °C)</option>
+            <option value="sms" data-i18n="cl_sms">SMS coveralls (+0.5 °C)</option>
+            <option value="polyolefin" data-i18n="cl_polyolefin">Polyolefin coveralls (+1 °C)</option>
+            <option value="double" data-i18n="cl_double">Double-layer cloth (+3 °C)</option>
+            <option value="vapor" data-i18n="cl_vapor">Vapor-barrier coveralls (+11 °C)</option>
           </select>
         </div>
 
         <div class="row three">
-          <div><label for="duration" data-i18n="duration"></label><input id="duration" type="number" inputmode="numeric" min="1" max="12" step="1" value="2" /></div>
-          <div><label for="earliest" data-i18n="earliest"></label><select id="earliest"></select></div>
-          <div><label for="latest" data-i18n="latest"></label><select id="latest"></select></div>
+          <div><label for="duration" data-i18n="duration">How long (hours)</label><input id="duration" type="number" inputmode="numeric" min="1" max="12" step="1" value="2" /></div>
+          <div><label for="earliest" data-i18n="earliest">Earliest start</label><select id="earliest"></select></div>
+          <div><label for="latest" data-i18n="latest">Finish by</label><select id="latest"></select></div>
         </div>
-        <button type="submit" class="primary" data-i18n="planBtn"></button>
+        <button type="submit" class="primary" data-i18n="planBtn">Build my heat plan</button>
       </section>
     </form>
 
     <div class="status-row">
       <p id="status" class="status" role="status" aria-live="polite"></p>
-      <button type="button" id="retryBtn" class="ghost" data-i18n="retry" hidden></button>
+      <button type="button" id="retryBtn" class="ghost" data-i18n="retry" hidden>Try again</button>
     </div>
 
     <section id="results" tabindex="-1" aria-labelledby="resultsTitle" hidden>
-      <h2 id="resultsTitle" data-i18n="resultsTitle"></h2>
-      <p id="sampleBanner" class="banner" data-i18n="sampleBanner" hidden></p>
-      <p id="replayBanner" class="banner replay" data-i18n="replayBanner" hidden></p>
+      <h2 id="resultsTitle" data-i18n="resultsTitle">3. Your heat plan</h2>
+      <p id="sampleBanner" class="banner" data-i18n="sampleBanner" hidden>This is a SYNTHETIC sample day (not a real forecast), so you can see how HeatWise works.</p>
+      <p id="replayBanner" class="banner replay" data-i18n="replayBanner" hidden>HISTORICAL REPLAY, not a forecast: Houston Intercontinental Airport (IAH) on Thursday, August 24, 2023, when it reached 109°F (tying Houston's all-time record) during an NWS Excessive Heat Warning. Built from that day's archived hourly weather reports.</p>
       <p id="forecastMeta" class="muted small"></p>
       <p id="printSummary" class="print-only small"></p>
 
       <div class="grid2">
         <article class="card risk-card" id="nowCard" aria-labelledby="nowTitle">
-          <h3 id="nowTitle" data-i18n="nowTitle"></h3>
+          <h3 id="nowTitle" data-i18n="nowTitle">This hour</h3>
           <div class="big" id="nowRisk"></div>
           <dl class="stats" id="nowStats"></dl>
           <p id="nowAdvice" class="advice"></p>
         </article>
         <article class="card risk-card" id="bestCard" aria-labelledby="bestTitle">
-          <h3 id="bestTitle" data-i18n="bestTitle"></h3>
+          <h3 id="bestTitle" data-i18n="bestTitle">Safest window</h3>
           <div class="big" id="bestTime"></div>
           <dl class="stats" id="bestStats"></dl>
           <p id="bestAdvice" class="advice"></p>
@@ -124,74 +132,74 @@
       </div>
       <!-- The answer comes first on a phone; where the numbers came from and what WBGT means follow it. -->
       <p id="forecastSource" class="small source-line"></p>
-      <p id="wbgtHelp" class="small muted" data-i18n="wbgtHelp"></p>
-      <p id="uilNote" class="note small" data-i18n="uilPlanningNote" hidden></p>
+      <p id="wbgtHelp" class="small muted" data-i18n="wbgtHelp">WBGT (wet-bulb globe temperature) is the heat-stress number that Texas UIL flags and OSHA/NIOSH limits use. It counts sun, wind and humidity, so it reads higher than the air temperature on a sunny day.</p>
+      <p id="uilNote" class="note small" data-i18n="uilPlanningNote" hidden>Planning only: once the WBGT reaches the yellow flag (82.0 °F in Class 3, 79.7 °F in Class 2), UIL requires schools to check it with an on-site meter or an approved app within 15 minutes before practice and every 30 minutes during it.</p>
 
       <article class="card" aria-labelledby="chartTitle">
-        <h3 id="chartTitle" data-i18n="chartTitle"></h3>
+        <h3 id="chartTitle" data-i18n="chartTitle">Next 48 hours</h3>
         <div id="chart" class="chart" role="img"></div>
         <ul id="legend" class="legend small"></ul>
         <details>
-          <summary data-i18n="tableToggle"></summary>
+          <summary data-i18n="tableToggle">Show hour-by-hour table</summary>
           <div class="table-wrap" tabindex="0" role="region" aria-labelledby="chartTitle"><table id="hourTable"></table></div>
-          <p id="nightNote" class="muted small" data-i18n="nightNote" hidden></p>
+          <p id="nightNote" class="muted small" data-i18n="nightNote" hidden>* simple estimate at night/cloud: likely reads high (safer side)</p>
         </details>
       </article>
 
       <div class="grid2">
         <article class="card" aria-labelledby="waterTitle">
-          <h3 id="waterTitle" data-i18n="waterTitle"></h3>
+          <h3 id="waterTitle" data-i18n="waterTitle">Water plan</h3>
           <ul id="waterList"></ul>
         </article>
         <article class="card" aria-labelledby="acclTitle">
-          <h3 id="acclTitle" data-i18n="acclTitle"></h3>
-          <p class="small" data-i18n="acclIntro"></p>
-          <p id="acclAthlete" class="small muted" data-i18n="acclAthlete" hidden></p>
+          <h3 id="acclTitle" data-i18n="acclTitle">Acclimatization planner</h3>
+          <p class="small" data-i18n="acclIntro">New to the heat this season? NIOSH says build up time in the heat over 7–14 days.</p>
+          <p id="acclAthlete" class="small muted" data-i18n="acclAthlete" hidden>This is NIOSH's worker schedule; athletes should also follow their school's acclimatization rules.</p>
           <div class="row">
-            <div><label for="acclUsual" data-i18n="acclUsual"></label><input id="acclUsual" type="number" inputmode="numeric" min="10" max="720" step="10" value="120" /></div>
-            <label class="check"><input id="acclNew" type="checkbox" checked /> <span data-i18n="acclNew"></span></label>
+            <div><label for="acclUsual" data-i18n="acclUsual">Usual session (minutes)</label><input id="acclUsual" type="number" inputmode="numeric" min="10" max="720" step="10" value="120" /></div>
+            <label class="check"><input id="acclNew" type="checkbox" checked /> <span data-i18n="acclNew">First time doing this in the heat</span></label>
           </div>
           <ol id="acclList" class="accl"></ol>
         </article>
       </div>
 
       <article class="card warn" aria-labelledby="signsTitle">
-        <h3 id="signsTitle" data-i18n="signsTitle"></h3>
+        <h3 id="signsTitle" data-i18n="signsTitle">Warning signs &amp; first aid</h3>
         <ul>
-          <li data-i18n="signsStroke"></li>
-          <li data-i18n="signsExh"></li>
-          <li data-i18n="signsCramps"></li>
-          <li data-i18n="signsCool"></li>
+          <li data-i18n="signsStroke">Heat stroke: confusion, slurred speech, passing out, seizures, hot dry skin or heavy sweating, very high body temperature (above 103 °F). CALL 911 and cool them with ice or cold water until help arrives. Don't give them anything to drink.</li>
+          <li data-i18n="signsExh">Heat exhaustion: dizziness, nausea or vomiting, heavy sweating, weakness, thirst. Move them to shade or A/C, loosen their clothes, cool them with cold wet cloths, and give sips of water. Stay with them. Get medical help right away if they vomit, get worse, or aren't better within 1 hour.</li>
+          <li data-i18n="signsCramps">Heat cramps: muscle spasms or pain, often in the legs, arms or stomach. Stop, rest somewhere cool and sip water. Get medical help if cramps last more than 1 hour.</li>
+          <li data-i18n="signsCool">Fastest cooling: put the person in cold water or an ice bath (OSHA calls this the best method).</li>
         </ul>
-        <p><strong data-i18n="signsRule"></strong></p>
+        <p><strong data-i18n="signsRule">When in doubt, cool them and call 911. Never leave someone with heat illness alone.</strong></p>
       </article>
 
       <article class="card coach" id="coachCard" aria-labelledby="coachTitle">
-        <h3 id="coachTitle" data-i18n="coachTitle"></h3>
-        <p class="small" data-i18n="coachIntro"></p>
+        <h3 id="coachTitle" data-i18n="coachTitle">One-page coach plan</h3>
+        <p class="small" data-i18n="coachIntro">Print it for the clipboard or send it to parents and staff. Pick the day and the language; “Both” prints an English page and a Spanish page.</p>
         <div class="row coach-controls no-print">
-          <div><label for="planDay" data-i18n="planDayLabel"></label><select id="planDay"></select></div>
-          <div><label for="sheetLang" data-i18n="sheetLangLabel"></label><select id="sheetLang">
-            <option value="en" data-i18n="lang_en"></option>
-            <option value="es" data-i18n="lang_es"></option>
-            <option value="both" data-i18n="sheetLangBoth"></option>
+          <div><label for="planDay" data-i18n="planDayLabel">Day</label><select id="planDay"></select></div>
+          <div><label for="sheetLang" data-i18n="sheetLangLabel">Plan language</label><select id="sheetLang">
+            <option value="en" data-i18n="lang_en">English</option>
+            <option value="es" data-i18n="lang_es">Spanish (Español)</option>
+            <option value="both" data-i18n="sheetLangBoth">Both (English + Spanish)</option>
           </select></div>
         </div>
         <div class="row no-print">
-          <button type="button" id="coachPrintBtn" data-i18n="coachPrint"></button>
-          <button type="button" id="coachShareBtn" class="ghost" data-i18n="coachShare"></button>
+          <button type="button" id="coachPrintBtn" data-i18n="coachPrint">Print / save this plan (PDF)</button>
+          <button type="button" id="coachShareBtn" class="ghost" data-i18n="coachShare">Share plan as text</button>
         </div>
         <div id="coachSheet" class="coach-sheets"></div>
       </article>
 
       <div class="row actions no-print">
-        <button type="button" id="shareBtn" class="ghost" data-i18n="shareBtn"></button>
-        <button type="button" id="printBtn" class="ghost" data-i18n="printBtn"></button>
+        <button type="button" id="shareBtn" class="ghost" data-i18n="shareBtn">Copy link to this plan</button>
+        <button type="button" id="printBtn" class="ghost" data-i18n="printBtn">Print / save PDF</button>
       </div>
     </section>
 
     <section class="card math" aria-labelledby="mathTitle">
-      <h2 id="mathTitle" data-i18n="mathTitle"></h2>
+      <h2 id="mathTitle" data-i18n="mathTitle">How the math works</h2>
       <div data-show-lang="en">
       <ol>
         <li><b>Forecast:</b> for U.S. places, hourly air temperature, humidity and wind come from the <b>National Weather Service</b> gridded forecast (api.weather.gov, the same grid behind the NWS heat index and WBGT forecasts); sunshine (solar radiation) and pressure come from Open-Meteo, because the NWS grid has none. Outside the U.S., or if the NWS does not answer, every input comes from Open-Meteo. Both are free with no key, and the plan says which source it used.</li>
@@ -212,7 +220,7 @@
         <li><b>Índice de calor</b> (a la sombra, como referencia) usa la regresión de Rothfusz del NWS.</li>
       </ol>
       </div>
-      <p class="small"><span data-i18n="sourcesLabel"></span>
+      <p class="small"><span data-i18n="sourcesLabel">Sources: </span>
         <a href="https://www.uiltexas.org/health/info/heat-stress-and-athletic-participation" target="_blank" rel="noopener">UIL Heat Stress &amp; Athletic Participation Plan</a> ·
         <a href="https://www.osha.gov/heat-exposure/hazards" target="_blank" rel="noopener">OSHA Heat Hazard Recognition</a> ·
         <a href="https://www.cdc.gov/niosh/heat-stress/recommendations/index.html" target="_blank" rel="noopener">NIOSH Workplace Recommendations</a> ·
@@ -223,7 +231,7 @@
         <a href="https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml" target="_blank" rel="noopener">NWS Heat Index</a> ·
         <a href="https://www.weather.gov/documentation/services-web-api" target="_blank" rel="noopener">NWS API (api.weather.gov)</a> ·
         <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> (CC BY 4.0)</p>
-      <p class="small muted" data-i18n="disclaimer"></p>
+      <p class="small muted" data-i18n="disclaimer">HeatWise is a planning and screening tool, not medical advice. Forecasts are not on-site measurements; OSHA recommends a WBGT meter at the site for the most accurate assessment.</p>
     </section>
 
     <section class="card validation" id="validation" aria-labelledby="validationTitle">
