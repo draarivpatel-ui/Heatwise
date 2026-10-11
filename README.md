@@ -47,6 +47,34 @@ Most weather apps answer "how hot is it?" HeatWise answers the question a coach 
 6. **Activity presets** (football practice, band rehearsal, mowing, a mail route…) pick the guideline and the closest OSHA workload category.
 7. **Heat index** (shade, for familiarity only) uses the NWS Rothfusz regression with its published adjustments.
 
+## Validation study: does HeatWise agree with the National Weather Service?
+
+HeatWise's numbers come from code, so I checked them against the **National Weather Service's own forecast** for 8 Houston-area points (downtown Houston, Sugar Land, Katy, Pearland, Baytown, Tomball, Conroe, Galveston), over every forecast hour the NWS grid had: **1,472 point-hours**, Oct 10, 4 PM to Oct 18, 7 AM (Central), from the forecast issued Oct 10, 2026 at 4:06 PM CDT. It is framed as **agreement, not accuracy**: the NWS numbers are forecasts too. The same results, with charts, are in the app's **Validation** section, which recomputes every number in the browser from the archived data.
+
+| Comparison | Hours | Bias (HeatWise − NWS) | Mean abs. difference | Other |
+|---|---|---|---|---|
+| **Heat index**, HeatWise formula on the NWS forecast temperature + humidity vs the NWS forecast heat index (hours ≥ 80 °F) | 770 | **+0.01 °F** | **0.28 °F** | 99.1% within 1 °F, 100% within 2 °F, max 1.04 °F; 89.1% identical after rounding to whole °F like the NWS; r = 0.998 |
+| **WBGT, same weather**: HeatWise's Liljegren WBGT on the NWS temperature, humidity and wind (sunshine and pressure from Open-Meteo, since the NWS grid has none) vs the NWS WBGT forecast | 1,376 | +0.56 °F (day +1.54, night −0.42) | 1.07 °F (day 1.64, night 0.50) | Texas UIL flag (Class 3) matched in **90.6%** of hours, within one flag in 99.9%; in **118 of the 129** disagreements HeatWise showed the *more cautious* flag; r = 0.979 |
+| **WBGT, end to end**: the app's real pipeline (all inputs from Open-Meteo) vs the NWS WBGT forecast | 1,376 | **−3.92 °F** | 4.33 °F | UIL flag matched in 86.2% of hours; in 163 of the 190 disagreements HeatWise's flag was *lower*. Over these hours Open-Meteo's forecast was on average 4.2 °F cooler and 8.7 RH points drier than the NWS forecast. |
+
+**What this shows.** (1) The heat-index code reproduces the NWS's operational output; the remaining 0.28 °F is about what rounding the NWS's whole-degree values alone produces. (2) Given the same weather, HeatWise's physics-based WBGT agrees with the NWS's operational WBGT to about 1 °F, matches at night, and runs slightly warmer in the sun, which errs on the side of caution. (3) The biggest source of disagreement is not the formula but the **weather forecast feeding it**: this week Open-Meteo forecast cooler, drier air than the NWS, so the app's flags were lower than the NWS's in about 1 hour in 8. Using the NWS grid as HeatWise's input for U.S. locations is the clear next step.
+
+### Replay: Houston's record heat, Aug 24, 2023
+
+On Aug 24, 2023, Bush Intercontinental Airport (IAH) reached **109 °F**, tying Houston's all-time record, during an NWS Excessive Heat Warning ([NWS Houston August 2023 climate summary](https://www.weather.gov/media/hgx/climate/summary/Aug_2023_Regional_Climate_Summary.pdf); [NWS Storm Data, Aug 2023](https://www.weather.gov/media/hgx/stormdata/aug23hgx.pdf)). Running IAH's archived hourly reports (Iowa Environmental Mesonet ASOS archive) plus archived sunshine (Open-Meteo ERA5) through HeatWise:
+
+- Heat index peaked at **117 °F** (3:53 PM report: 109 °F, 27% RH). WBGT in the sun peaked at **94.4 °F** (4:53 PM report).
+- The UIL Class 3 flag was **black (no outdoor workouts) for 4 hours** (the 12:53, 2:53, 3:53 and 4:53 PM reports) and red for 3 more.
+- The planner's safest 2-hour window between 6 AM and 9 PM was **6–8 AM, green flag, WBGT ≤ 78.1 °F**.
+- Cross-check: HeatWise's heat index matched the Iowa Environmental Mesonet's independently computed heat index for all 24 reports to within 0.01 °F.
+
+### Method and limits
+- NWS data: `https://api.weather.gov/points/{lat},{lon}` → `forecastGridData` (Houston/Galveston office, NDFD). Grid values cover 1–N hours each (ISO-8601 durations) and are expanded to hourly steps. Only hours valid at or after the issue time are used (the grid also carries a few already-past hours that are not refreshed with the rest). Missing values (null, and −120 °F) are dropped.
+- Heat index is compared only at ≥ 80 °F, where it is defined (below that the NWS reports the air temperature).
+- Replay: each routine METAR (at :53) stands for the following top of the hour; airports do not measure sunshine, so solar radiation and pressure come from the ERA5 reanalysis.
+- Limits: one forecast issue in October (few very hot hours); agreement with a forecast is not the same as matching a WBGT meter on a field; the NWS WBGT uses its own method and inputs (sky cover rather than measured sunshine).
+- Reproduce: `node scripts/fetch-validation-data.mjs` re-downloads everything into `data/validation/`; the tests (`node tests/heat.test.mjs`) re-run the comparisons on the archived snapshot.
+
 ## Tech
 
 - Plain **HTML, CSS, and JavaScript (ES modules)**. No framework, no build step, no backend, no tracking.
@@ -60,6 +88,10 @@ styles.css        styles (incl. print stylesheet)
 js/heat.js        heat math: Liljegren WBGT, heat index, UIL flags, OSHA/NIOSH limits, best window, hydration, acclimatization
 js/i18n.js        English/Spanish strings + activity presets
 js/app.js         forecast fetch, rendering (SVG chart), sharing
+js/validation.js  validation study math: NWS grid parsing, agreement statistics, 2023 replay
+js/validation-ui.js  the Validation section (loads data/validation/, draws the charts)
+data/validation/  archived NWS + Open-Meteo forecast snapshot (Oct 10, 2026) and the IAH Aug 24, 2023 replay data
+scripts/fetch-validation-data.mjs  re-downloads the validation data from the NWS, Open-Meteo and IEM
 tests/heat.test.mjs  unit tests (node tests/heat.test.mjs)
 tests/make_reference.py  regenerates the pywbgt/pvlib reference values in tests/fixtures/
 review-log.md     what each review pass found and fixed
@@ -81,18 +113,21 @@ python3 -m http.server 8000     # ES modules need http://, not file://
 ```bash
 node tests/heat.test.mjs
 ```
-The tests check the Liljegren globe and wet-bulb temperatures and end-to-end WBGT against pywbgt reference values, the sun position against NREL SPA (pvlib), the heat index against NWS chart values, the BoM fallback against BoM's worked example (29.4 °C / 59% RH → ≈30 °C), the UIL flag edges for Class 2 and 3, OSHA/NIOSH limits and clothing factors, the best-window algorithm (including the brute-force comparison), hydration and acclimatization math, DST-aware local hours, that every English string has a Spanish one, and that the guidance text quotes the same numbers as the code.
+The tests check the Liljegren globe and wet-bulb temperatures and end-to-end WBGT against pywbgt reference values, the sun position against NREL SPA (pvlib), the heat index against NWS chart values, the BoM fallback against BoM's worked example (29.4 °C / 59% RH → ≈30 °C), the UIL flag edges for Class 2 and 3, OSHA/NIOSH limits and clothing factors, the best-window algorithm (including the brute-force comparison), hydration and acclimatization math, DST-aware local hours, that every English string has a Spanish one, and that the guidance text quotes the same numbers as the code. Eight more tests cover the validation study: NWS duration parsing and missing-value handling, the agreement statistics, the archived NWS snapshot (heat index MAE < 0.5 °F, UIL flag agreement > 85%), and the 2023 replay (109 °F, heat index equal to IEM's within 0.1 °F, safest window in the early morning). 37 tests in total.
 
 ## Limitations (being honest)
 
 - WBGT here is **estimated from a forecast**, not measured. The Liljegren model is the standard physics approach, but the inputs are a forecast for a grid cell, not your field or roof: clouds, wind and humidity can differ, and artificial turf, asphalt, and bowl-shaped stadiums can be hotter. OSHA recommends an on-site WBGT meter, and UIL requires schools to check WBGT with a meter or an approved app before and during practice. HeatWise is for **planning ahead**, not for that check.
 - When the forecast has no sun or wind data, the simple BoM fallback is used; it tends to read **high at night, in clouds, or in wind** (HeatWise marks those hours with *).
+- The validation study found that the app's weather input (Open-Meteo) forecast about 4 °F cooler and drier air than the NWS during the test week, so its end-to-end WBGT read about 3.9 °F lower than the NWS WBGT forecast. See the Validation study above.
 - Personal factors (medications, illness, fitness, prior heat illness) are not modeled.
 - The Spanish text was written for this project and checked against the English, but it has **not yet been reviewed by a native speaker**.
 - HeatWise is a **screening and planning tool, not medical advice**. When in doubt, cool the person and call 911.
 
 ## What's next
 
+- Use the NWS forecast grid as the weather input for U.S. locations (the validation study's main finding), keeping Open-Meteo elsewhere
+- Repeat the validation over a full summer, and against on-site WBGT meter readings
 - Team mode: a coach dashboard with roster acclimatization tracking
 - Alerts when the next practice window turns high-risk
 - More languages (Vietnamese, Chinese, and Urdu are widely spoken in the Houston area), reviewed by native speakers
@@ -111,6 +146,13 @@ The tests check the Liljegren globe and wet-bulb temperatures and end-to-end WBG
 - NOAA/NWS WPC, *The Heat Index Equation*: https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
 - Howard JT et al. *Trends of Heat-Related Deaths in the US, 1999–2023.* JAMA. 2024;332(14):1203–1204: https://jamanetwork.com/journals/jama/fullarticle/2822854
 - Texas Tribune, Jan 12, 2024: https://www.texastribune.org/2024/01/12/texas-heat-deaths-2023-record-climate-change
+- National Weather Service API (gridpoint forecasts, used for validation): https://www.weather.gov/documentation/services-web-api
+- NWS Houston/Galveston, *August 2023 Regional Climate Summary*: https://www.weather.gov/media/hgx/climate/summary/Aug_2023_Regional_Climate_Summary.pdf
+- NWS Houston/Galveston, *Storm Data and Unusual Weather Phenomena, August 2023*: https://www.weather.gov/media/hgx/stormdata/aug23hgx.pdf
+- Houston Public Media, Aug 25, 2023, *Houston ties record for hottest temperature ever recorded*: https://www.houstonpublicmedia.org/articles/news/weather/2023/08/25/460628/houston-ties-record-for-hottest-temperature-ever-recorded-in-city-at-109-degrees
+- Space City Weather, Aug 25, 2023 (first official rain in almost 50 days): https://spacecityweather.com/thursday-matched-houstons-hottest-day-on-record-and-brought-our-first-official-rain-in-almost-50-days/
+- Iowa Environmental Mesonet, ASOS/METAR archive (IAH hourly reports): https://mesonet.agron.iastate.edu/request/download.phtml
+- Open-Meteo Historical Weather API (ERA5): https://open-meteo.com/en/docs/historical-weather-api
 - Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0)
 
 ## License
