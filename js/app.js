@@ -102,6 +102,8 @@ function showCacheStatus() {
 
 async function loadPlace(place, { force = false } = {}) {
   state.place = place;
+  // Pressing Refresh disables it while loading, which drops keyboard focus to <body>; remember where to put it back.
+  const returnTo = document.activeElement;
   renderPlaceLabel();
   setStatus(t(force ? "refreshing" : "loading"));
   setBusy(true);
@@ -112,6 +114,8 @@ async function loadPlace(place, { force = false } = {}) {
     state.data = { hours: future, isSample: false, tz, tzAbbr, place, source, fetchedAt: Date.now(), cachedAt, cacheFallback: !!cacheFallback };
     $("retryBtn").hidden = true;
     showCacheStatus();
+    // A successful refresh leaves no cache label; say so, so screen readers hear the result (aria-live) too.
+    if (force && !cacheStatusText()) setStatus(t("refreshed"));
   } catch (e) {
     console.warn(e);
     // Keep the place so "Try again" and the share link still point at it, but show the labelled sample day.
@@ -119,13 +123,23 @@ async function loadPlace(place, { force = false } = {}) {
     setStatus(t("errApi"), true);
     $("retryBtn").hidden = false;
     $("refreshBtn").hidden = true;
+    if (force) restoreFocus(returnTo, $("retryBtn"));
     return;
   } finally {
     setBusy(false);
   }
   render(!force);
-  // "Refresh now" keeps the user where they are; if the button went away, keep keyboard focus on the status line.
-  if (force && $("refreshBtn").hidden && document.activeElement === document.body) $("status").focus({ preventScroll: true });
+  // "Refresh now" keeps the user where they are: back on the button if it's still there (refresh failed, saved
+  // forecast kept), otherwise on the status line that now says "Forecast updated".
+  if (force) restoreFocus(returnTo, $("status"));
+}
+
+/** Put keyboard focus back after a busy spell, only if it was dropped to <body>. */
+function restoreFocus(prev, fallback) {
+  const a = document.activeElement;
+  if (a && a !== document.body) return;
+  const ok = (el) => el && el !== document.body && el.isConnected && !el.disabled && !el.hidden && el.getClientRects().length > 0;
+  (ok(prev) ? prev : fallback)?.focus({ preventScroll: true });
 }
 
 function loadSample(clearStatus = true, fallbackFor = null) {
@@ -589,6 +603,7 @@ async function doSearch() {
   }
   list.innerHTML = results.map((r, i) => `<li><button type="button" data-i="${i}">${escapeHtml(r.name)}</button></li>`).join("");
   list.hidden = false;
+  setStatus(t("pickPlace").replace("{n}", results.length));
   list.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
     list.hidden = true;
     loadPlace(results[Number(b.dataset.i)]);
@@ -610,7 +625,7 @@ function applyPreset(rerender = true) {
 $("searchBtn").addEventListener("click", doSearch);
 $("place").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); doSearch(); } });
 $("placeResults").addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { $("placeResults").hidden = true; $("place").focus(); }
+  if (e.key === "Escape") { $("placeResults").hidden = true; setStatus(""); $("place").focus(); }
   if (e.key === "ArrowDown" || e.key === "ArrowUp") {
     const btns = [...$("placeResults").querySelectorAll("button")];
     const i = btns.indexOf(document.activeElement);
@@ -683,6 +698,11 @@ $("planForm").addEventListener("submit", (e) => {
 document.querySelectorAll("[data-lang]").forEach((b) => b.addEventListener("click", () => {
   state.lang = b.dataset.lang; fmtCache.clear(); applyLang(); if (state.data) syncUrl();
   if (state.data?.cachedAt && !$("refreshBtn").hidden) showCacheStatus();
+  // Re-word one-line notes that are already showing ("Forecast updated", "N places match").
+  const st = $("status").textContent;
+  if (Object.values(STRINGS).some((S) => S.refreshed === st)) setStatus(t("refreshed"));
+  const n = $("placeResults").hidden ? 0 : $("placeResults").querySelectorAll("button").length;
+  if (n && Object.values(STRINGS).some((S) => S.pickPlace.replace("{n}", n) === st)) setStatus(t("pickPlace").replace("{n}", n));
 }));
 $("shareBtn").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(location.href); setStatus(t("copied")); }
