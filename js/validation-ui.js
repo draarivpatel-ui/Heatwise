@@ -138,12 +138,28 @@ const fmtDay = (ms) => dtf({ month: "short", day: "numeric", hour: "numeric" }).
 const fmtHour = (ms) => dtf({ hour: "numeric" }).format(new Date(ms));
 const fmtHM = (ms) => dtf({ hour: "numeric", minute: "2-digit" }).format(new Date(ms));
 
+// The study recomputes ~1,000 hours of WBGT (≈0.6 s of main-thread work on a
+// throttled phone), so it waits until the section is near the screen (or the page
+// is printed) instead of blocking first load. Language switches still update it.
+let visible = typeof IntersectionObserver === "undefined";
+let watching = false;
+function whenVisible(root) {
+  if (visible || watching) return visible;
+  watching = true;
+  const go = () => { if (visible) return; visible = true; io.disconnect(); renderValidation(lang); };
+  const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) go(); }, { rootMargin: "800px 0px" });
+  io.observe(root.closest("section") || root);
+  addEventListener("beforeprint", go, { once: true });
+  return false;
+}
+
 export async function renderValidation(newLang = lang) {
   lang = newLang;
   const root = document.getElementById("validationBody");
   if (!root) return;
   const S = V[lang] || V.en;
   document.getElementById("validationTitle").textContent = S.title;
+  if (!whenVisible(root)) return;
   let c;
   try { c = await load(); }
   catch (e) { console.warn(e); root.innerHTML = `<p class="status error">${esc(S.loadErr)}</p>`; return; }
