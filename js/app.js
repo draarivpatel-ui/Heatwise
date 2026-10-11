@@ -9,6 +9,7 @@ import {
 import { STRINGS, PRESETS } from "./i18n.js";
 import { renderValidation } from "./validation-ui.js";
 import { getForecast } from "./forecast.js";
+import { searchPlaces } from "./places.js";
 import { REPLAY, replayHours, planDays, coachPlan, coachPlanText, dayKey } from "./plan.js";
 
 const $ = (id) => document.getElementById(id);
@@ -81,26 +82,6 @@ function setStatus(msg, isError = false) {
 }
 
 // ---------- data ----------
-async function geocode(query) {
-  // Open-Meteo matches place names or postal codes; "Sugar Land, TX" style input works for the
-  // first part, so search that and rank results whose state/country matches the rest.
-  const [main, ...rest] = query.split(",").map((s) => s.trim()).filter(Boolean);
-  const hint = rest.join(" ").toLowerCase();
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(main || query)}&count=8&language=${state.lang}&format=json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("geocode " + res.status);
-  const json = await res.json();
-  const results = (json.results || []).map((r) => ({
-    name: [r.name, r.admin1, r.country_code].filter(Boolean).join(", "),
-    lat: r.latitude, lon: r.longitude,
-    score: hint && [r.admin1, r.country, r.country_code, stateAbbr(r.admin1)].some((v) => v && hint.includes(String(v).toLowerCase())) ? 1 : 0,
-  }));
-  return results.sort((a, b) => b.score - a.score).slice(0, 5);
-}
-
-const US_STATES = { Texas: "tx", Louisiana: "la", Oklahoma: "ok", "New Mexico": "nm", Arizona: "az", California: "ca", Florida: "fl", Georgia: "ga", Alabama: "al", Mississippi: "ms", Arkansas: "ar" };
-const stateAbbr = (admin1) => US_STATES[admin1] || null;
-
 /** Index of the hour containing "now" (or the first future hour). */
 function currentIndex(hours, now = Date.now()) {
   const i = hours.findIndex((h) => now < h.t + 3600e3);
@@ -571,9 +552,9 @@ async function doSearch() {
   if (query.length < 2) { setStatus(t("errGeo"), true); $("place").focus(); return; }
   setStatus(t("searching"));
   setBusy(true);
-  let results;
+  let results, pick;
   try {
-    results = await geocode(query);
+    ({ ranked: results, pick } = await searchPlaces(query, state.lang));
   } catch (e) {
     console.warn(e);
     setBusy(false);
@@ -583,9 +564,9 @@ async function doSearch() {
   setBusy(false);
   if (!results.length) { list.hidden = true; setStatus(t("errGeo"), true); return; }
   setStatus("");
-  if (results.length === 1 || results[0].score > (results[1]?.score ?? 0)) {
+  if (pick) {
     list.hidden = true;
-    loadPlace(results[0]);
+    loadPlace(pick);
     return;
   }
   list.innerHTML = results.map((r, i) => `<li><button type="button" data-i="${i}">${escapeHtml(r.name)}</button></li>`).join("");
