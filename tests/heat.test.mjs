@@ -780,6 +780,37 @@ test("all-clear: only when every allowed hour is green/lower risk (EN/ES strings
     assert.equal(r.cachedAt, null);
     assert.ok(STRINGS.en.cachedAgo.includes("{n}") && STRINGS.es.cachedAgo.includes("{n}"));
   });
+  atest("forecast cache: force (Refresh now) bypasses the 30-min reuse and saves the new answer", async () => {
+    const st = mem(); const t0 = 1e12; mode = "ok";
+    await getForecastCached(29.7, -95.3, { storage: st, now: t0, fetchImpl: f, useNws: false });
+    const n = calls;
+    const b = await getForecastCached(29.7, -95.3, { storage: st, now: t0 + 5 * 60e3, force: true, fetchImpl: f, useNws: false });
+    assert.ok(calls > n, "force makes a live request"); assert.equal(b.cachedAt, null); assert.equal(b.cacheFallback, false);
+    const c = await getForecastCached(29.7, -95.3, { storage: st, now: t0 + 6 * 60e3, fetchImpl: f, useNws: false });
+    assert.equal(c.cachedAt, t0 + 5 * 60e3, "the refreshed answer is what later lookups reuse");
+  });
+  atest("forecast cache: forced refresh hit by 429 keeps the saved answer, flagged cacheFallback", async () => {
+    const st = mem(); const t0 = 1e12; mode = "ok";
+    await getForecastCached(29.7, -95.3, { storage: st, now: t0, fetchImpl: f, useNws: false });
+    mode = "429";
+    const b = await getForecastCached(29.7, -95.3, { storage: st, now: t0 + 12 * 60e3, force: true, fetchImpl: f, useNws: false });
+    assert.equal(b.cachedAt, t0); assert.equal(b.cacheFallback, true);
+    const c = await getForecastCached(29.7, -95.3, { storage: st, now: t0 + 13 * 60e3, fetchImpl: f, useNws: false });
+    assert.equal(c.cacheFallback, false, "a plain repeat lookup within 30 min is a normal reuse");
+    mode = "ok";
+  });
+  test("Refresh now: EN/ES strings, a real <button> beside the status, wired to force", () => {
+    for (const L of ["en", "es"]) {
+      assert.ok(STRINGS[L].refreshNow && STRINGS[L].refreshing, L + " refresh strings");
+      assert.ok(STRINGS[L].cachedFallback.includes("{n}"), L + " fallback label has {n}");
+    }
+    assert.notEqual(STRINGS.en.refreshNow, STRINGS.es.refreshNow);
+    const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    assert.match(html, /<button type="button" id="refreshBtn" class="ghost" data-i18n="refreshNow" hidden>/);
+    const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+    assert.ok(app.includes("loadPlace(state.place, { force: true })"), "click handler forces a live fetch");
+    assert.ok(/"retryBtn", "replayBtn", "refreshBtn"\]/.test(app), "disabled while busy");
+  });
 }
 
 for (const [name, fn] of atests) {
