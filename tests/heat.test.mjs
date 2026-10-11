@@ -16,6 +16,7 @@ import { computeAll } from "../js/validation-ui.js";
 import {
   inNwsArea, nwsHourly, mergeInputs, nwsOnlyHours, rhFromDewpoint, getForecast, fetchNwsGrid, NWS_USER_AGENT, NWS_MAX_AGE_MS,
 } from "../js/forecast.js";
+import { REPLAY, replayHours, dayKey, planDays, coachPlan, coachPlanText } from "../js/plan.js";
 
 let passed = 0;
 function test(name, fn) {
@@ -558,6 +559,109 @@ test("source labels: in both languages, and the backup warning quotes the measur
   assert.ok(html.includes('id="forecastSource"'));
   const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
   assert.ok(app.includes('from "./forecast.js"') && !app.includes("api.open-meteo.com/v1/forecast"), "the app fetches the forecast only through forecast.js");
+});
+
+// ---------- one-click replay of Houston's record day + one-page coach plan ----------
+const UIL3 = { guideline: "uil", uilClass: 3, workload: "veryHeavy", acclimatized: false, clothing: "work" };
+const fmtFor = (lang, tz) => {
+  const loc = lang === "es" ? "es-US" : "en-US";
+  return {
+    date: (ms) => new Intl.DateTimeFormat(loc, { timeZone: tz, dateStyle: "full" }).format(new Date(ms)),
+    time: (ms) => new Intl.DateTimeFormat(loc, { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(new Date(ms)),
+  };
+};
+
+test("replay: the plan view's hours reproduce the validation replay exactly (same WBGT, flags, 24 h)", () => {
+  const hours = replayHours(DAY);
+  assert.equal(hours.length, 24);
+  const scored = scoreHours(hours, UIL3, REPLAY.place);
+  const rp = replayDay(DAY);
+  scored.forEach((h, i) => {
+    near(cToF(h.wbgt), rp.rows[i].wbgtF, 1e-9, `WBGT row ${i}`);
+    assert.equal(h.level, rp.rows[i].flag, `flag row ${i}`);
+  });
+  assert.equal(dayKey(hours[0].t, DAY.tz), REPLAY.day, "first hour is midnight Aug 24 in Houston");
+  assert.equal(dayKey(hours[23].t, DAY.tz), REPLAY.day, "last hour is 11 PM Aug 24");
+  assert.deepEqual(planDays(hours, DAY.tz).map((d) => [d.key, d.n]), [[REPLAY.day, 24]]);
+  assert.equal(REPLAY.place.lat, DAY.lat); assert.equal(REPLAY.place.lon, DAY.lon); assert.equal(REPLAY.place.tz, DAY.tz);
+});
+
+test("coach plan on the record day: 6 AM–8 AM green window, black flag hours inside practice hours, same as the replay", () => {
+  const scored = scoreHours(replayHours(DAY), UIL3, REPLAY.place);
+  const plan = coachPlan(scored, { tz: DAY.tz, day: REPLAY.day, duration: 2, earliest: 6, latest: 21 });
+  const rp = replayDay(DAY);
+  assert.equal(plan.rows.length, 15, "6 AM through 8 PM");
+  assert.equal(localHour(plan.rows[0].t, DAY.tz), 6);
+  assert.equal(plan.best.startT, rp.rows[rp.best.start].t, "same window as the validation replay");
+  assert.equal(localHour(plan.best.startT, DAY.tz), 6);
+  assert.equal(plan.best.endT - plan.best.startT, 2 * 3600e3);
+  assert.equal(plan.worst.level, "green");
+  assert.equal(plan.peak.level, "black");
+  assert.equal(plan.flagHours.black, rp.flagHours.black, "every black hour falls inside practice hours");
+  assert.deepEqual(plan.levels, [...plan.levels].sort((a, b) => ["green", "yellow", "orange", "red", "black"].indexOf(a) - ["green", "yellow", "orange", "red", "black"].indexOf(b)));
+  assert.ok(plan.levels.includes("green") && plan.levels.includes("black"));
+  assert.equal(plan.partial, false);
+});
+
+test("coach plan edge cases: no window, whole-day hours, a forecast that spans two days (DST-aware day keys)", () => {
+  const scored = scoreHours(replayHours(DAY), UIL3, REPLAY.place);
+  assert.equal(coachPlan(scored, { tz: DAY.tz, day: REPLAY.day, duration: 5, earliest: 6, latest: 9 }).best, null, "5 h can't fit in 6–9 AM");
+  const whole = coachPlan(scored, { tz: DAY.tz, day: REPLAY.day, duration: 2, earliest: 7, latest: 7 });
+  assert.equal(whole.rows.length, 24, "same start and finish = whole day");
+  const outside = coachPlan(scored, { tz: DAY.tz, day: "2023-08-25", duration: 2, earliest: 6, latest: 21 });
+  assert.equal(outside.rows.length, 0); assert.equal(outside.best, null);
+  // 48 sample hours starting 2 PM CST on the day DST ends: three local days, keyed in Chicago time.
+  const from = Date.UTC(2026, 10, 1, 20); // Nov 1 2026, 2 PM CST
+  const days = planDays(sampleHours(from), SAMPLE_PLACE.tz);
+  assert.deepEqual(days.map((d) => d.key), ["2026-11-01", "2026-11-02", "2026-11-03"]);
+  assert.equal(days.reduce((a, d) => a + d.n, 0), 48);
+  assert.equal(days[1].n, 24);
+  const p = coachPlan(scoreHours(sampleHours(from), UIL3, SAMPLE_PLACE), { tz: SAMPLE_PLACE.tz, day: "2026-11-02", duration: 2, earliest: 6, latest: 21 });
+  assert.equal(p.rows.length, 15); assert.ok(p.best); assert.equal(p.partial, false);
+  assert.equal(dayKey(Date.UTC(2026, 10, 2, 5, 30), "America/Chicago"), "2026-11-01", "11:30 PM CST is still Nov 1");
+});
+
+test("coach plan text: English and Spanish, every hour, the window, 911 and the replay label", () => {
+  const scored = scoreHours(replayHours(DAY), UIL3, REPLAY.place);
+  const plan = coachPlan(scored, { tz: DAY.tz, day: REPLAY.day, duration: 2, earliest: 6, latest: 21 });
+  for (const lang of ["en", "es"]) {
+    const S = STRINGS[lang], f = fmtFor(lang, DAY.tz);
+    const txt = coachPlanText(plan, S, { ...f, place: DAY.name, activity: S.presets.football, guideline: S.gl_uil, uil: true, replay: true, duration: 2, water: hydrationPlan(2), url: "https://aariv.me/Heatwise/?replay=iah2023" });
+    assert.ok(txt.startsWith(S.sheetTitle), lang);
+    assert.ok(txt.includes(S.sheetReplayNote), `${lang}: labelled as a historical replay`);
+    assert.ok(txt.includes(`${f.time(plan.best.startT)} – ${f.time(plan.best.endT)}`), `${lang}: window`);
+    assert.ok(txt.includes("911"), `${lang}: 911`);
+    assert.ok(txt.includes(S.uil_green), `${lang}: the window's UIL rule`);
+    for (const h of plan.rows) assert.ok(txt.includes(f.time(h.t)), `${lang}: hour ${f.time(h.t)}`);
+    assert.ok(txt.includes(S.level_black), `${lang}: black flag listed`);
+    assert.ok(txt.includes("?replay=iah2023"));
+  }
+  const es = coachPlanText(plan, STRINGS.es, { ...fmtFor("es", DAY.tz), place: DAY.name, activity: "x", guideline: "y", uil: true, replay: true, duration: 2, water: hydrationPlan(2) });
+  for (const w of ["Green", "Black", "Safest", "Water", "Before practice"]) assert.ok(!es.includes(w), `Spanish text has no English "${w}"`);
+  assert.match(es, /a\.\s?m\./, "Spanish times use a. m.");
+  // A too-long practice on a hot window gets the UIL cap warning.
+  const late = coachPlan(scored, { tz: DAY.tz, day: REPLAY.day, duration: 2, earliest: 13, latest: 17 });
+  const warn = coachPlanText(late, STRINGS.en, { ...fmtFor("en", DAY.tz), place: "", activity: "", guideline: "", uil: true, replay: true, duration: 2, water: hydrationPlan(2) });
+  assert.ok(warn.includes("Black flag") || warn.includes("caps practice"), "cap warning when the window is red/black");
+});
+
+test("page wiring: replay button sits above the form, coach plan card + print-only sheet CSS, zip removed", () => {
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  assert.ok(html.indexOf('id="replayBtn"') > 0 && html.indexOf('id="replayBtn"') < html.indexOf('id="planForm"'), "replay button before the form");
+  for (const id of ["replayBanner", "coachCard", "planDay", "sheetLang", "coachPrintBtn", "coachShareBtn", "coachSheet"]) assert.ok(html.includes(`id="${id}"`), id);
+  assert.match(css, /body\.print-coach #results > \*:not\(#coachCard\)/);
+  assert.match(css, /\.sheet \+ \.sheet \{ break-before: page; \}/, "each language prints on its own page");
+  assert.ok(app.includes('from "./plan.js"') && app.includes("isReplay"));
+  assert.ok(STRINGS.en.replayBtn.includes("Aug 24, 2023") && STRINGS.es.replayBtn.includes("24 ago 2023"));
+  assert.match(STRINGS.en.replayBanner, /HISTORICAL REPLAY, not a forecast/);
+  assert.match(STRINGS.es.replayBanner, /REPETICIÓN HISTÓRICA, no es un pronóstico/);
+  for (const lang of ["en", "es"]) {
+    assert.ok(STRINGS[lang].sheetCheck3.includes("911") && STRINGS[lang].sheetMeasure.includes("15") && STRINGS[lang].sheetMeasure.includes("30"), lang);
+    assert.match(STRINGS[lang].chartAriaReplay("78°F", "94°F", "6 AM – 8 AM"), /2023/);
+  }
+  assert.ok(!fs.existsSync(new URL("../heatwise.zip", import.meta.url)), "stale heatwise.zip removed");
 });
 
 for (const [name, fn] of atests) {
