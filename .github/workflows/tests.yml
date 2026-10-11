@@ -15,3 +15,4 @@ jobs:
       - run: python tests/browser/offline_429_qa.py   # rate limit (HTTP 429) and offline: saved forecast, honest labels, EN/ES
       - run: python tests/browser/print_plan_qa.py    # replay coach sheet + full plan print checks
       - run: python tests/browser/coach_print_qa.py   # coach sheet: 1 Letter page per language
+      - run: python tests/browser/place_picker_qa.py  # 390 px picker: long names wrap, same-looking places told apart, EN/ES

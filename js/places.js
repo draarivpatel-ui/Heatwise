@@ -37,8 +37,24 @@ export function rankPlaces(results, hint = "") {
     lat: r.latitude, lon: r.longitude,
     pop: Number(r.population) || 0,
     score: hint && [r.admin1, r.country, r.country_code, US_STATES[r.admin1]].some((v) => v && hasWord(hint, v)) ? 1 : 0,
-    i,
-  })).sort((a, b) => b.score - a.score || b.pop - a.pop || a.i - b.i).slice(0, 5);
+    i, r,
+  })).sort((a, b) => b.score - a.score || b.pop - a.pop || a.i - b.i)
+    // the same name at the same spot (to ~1 km) is one place listed twice: keep the first
+    .filter((p, k, all) => all.findIndex((o) => o.name === p.name && o.lat.toFixed(2) === p.lat.toFixed(2) && o.lon.toFixed(2) === p.lon.toFixed(2)) === k)
+    .slice(0, 5)
+    .map((p, _, all) => { const { r, ...rest } = p; return { ...rest, name: distinctName(p, all) }; });
+}
+
+/** Two choices must never read the same ("Springfield, Missouri, US" twice): add the county
+ *  (admin2) when it tells them apart, else the coordinates. */
+function distinctName(p, all) {
+  const same = all.filter((o) => o.name === p.name);
+  if (same.length < 2) return p.name;
+  const a2 = p.r.admin2 && p.r.admin2 !== p.r.name ? p.r.admin2 : "";
+  if (a2 && same.filter((o) => (o.r.admin2 || "") === a2).length === 1) {
+    return [p.r.name, a2, p.r.admin1, p.r.country_code].filter(Boolean).join(", ");
+  }
+  return `${p.name} (${p.lat.toFixed(2)}°, ${p.lon.toFixed(2)}°)`;
 }
 
 /**

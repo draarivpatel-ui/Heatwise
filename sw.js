@@ -6,7 +6,7 @@
  * always labelled with its age). Old HeatWise caches are deleted on activate; other apps' caches on the same
  * domain are never touched. Bump VERSION whenever the SHELL list changes.
  */
-var VERSION = 'hw-1';
+var VERSION = 'hw-2';
 var CACHE = 'heatwise-' + VERSION;
 var SHELL = ['./', 'index.html', 'styles.css',
   'js/app.js', 'js/i18n.js', 'js/heat.js', 'js/plan.js', 'js/forecast.js', 'js/places.js', 'js/validation-ui.js', 'js/validation.js',

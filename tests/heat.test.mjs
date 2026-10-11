@@ -728,6 +728,22 @@ test("place search: Houston-area towns open straight away; truly ambiguous names
   assert.ok(rankPlaces(GEO_FX.Houston.concat(GEO_FX.Katy)).length <= 5);
 });
 
+test("place search: same-looking choices are told apart (county, else coordinates); labels are unique", () => {
+  const sp = [
+    { ...G("Springfield", "Missouri", "US", 169000, 37.2, -93.29), admin2: "Greene" },
+    { ...G("Springfield", "Illinois", "US", 116000, 39.8, -89.64), admin2: "Sangamon" },
+    { ...G("Springfield", "Missouri", "US", 900, 37.35, -92.9), admin2: "Webster" },
+  ];
+  assert.deepEqual(rankPlaces(sp).map((r) => r.name), ["Springfield, Greene, Missouri, US", "Springfield, Illinois, US", "Springfield, Webster, Missouri, US"]);
+  const katy = rankPlaces(GEO_FX.Katy).map((r) => r.name);
+  assert.deepEqual(katy, ["Katy, Texas, US", "Kąty, Podlasie, PL", "Kąty, Mazovia, PL"], "same name at the same spot is listed once: " + katy.join(" | "));
+  const kq = rankPlaces([G("Kąty", "Podlasie", "PL", 0, 53.1, 23.1), G("Kąty", "Podlasie", "PL", 0, 52.9, 22.7)]).map((r) => r.name);
+  assert.deepEqual(kq, ["Kąty, Podlasie, PL (53.10°, 23.10°)", "Kąty, Podlasie, PL (52.90°, 22.70°)"], "no county: coordinates tell them apart");
+  assert.equal(autoPick(rankPlaces(GEO_FX.Katy)).name, "Katy, Texas, US", "unique names are unchanged");
+  const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.ok(/\.results li button \{[^}]*overflow-wrap: anywhere/.test(css), "picker buttons wrap long names instead of widening the card");
+});
+
 atest("place search: a stalled connection times out instead of leaving 'Searching…' up forever", async () => {
   const hang = (url, { signal } = {}) => new Promise((_, reject) => signal?.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" }))));
   const t0 = Date.now();
