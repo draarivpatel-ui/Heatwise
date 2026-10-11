@@ -242,6 +242,17 @@ test("sample afternoon is hot enough to show a non-green UIL flag, and dawn is c
 });
 
 // ---------- i18n completeness ----------
+test("Spanish strings keep the same {placeholders} and function types as English", () => {
+  for (const k of Object.keys(STRINGS.en)) {
+    const a = STRINGS.en[k], b = STRINGS.es[k];
+    assert.equal(typeof b, typeof a, k);
+    if (typeof a === "string") {
+      const ph = (t) => (t.match(/\{\w+\}/g) || []).sort().join(",");
+      assert.equal(ph(b), ph(a), "placeholders differ: " + k);
+    }
+  }
+});
+
 test("every English string has a Spanish translation (and vice versa)", () => {
   const en = Object.keys(STRINGS.en).sort(), es = Object.keys(STRINGS.es).sort();
   assert.deepEqual(es, en);
@@ -810,6 +821,20 @@ test("all-clear: only when every allowed hour is green/lower risk (EN/ES strings
     const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
     assert.ok(app.includes("loadPlace(state.place, { force: true })"), "click handler forces a live fetch");
     assert.ok(/"retryBtn", "replayBtn", "refreshBtn"\]/.test(app), "disabled while busy");
+  });
+  test("keyboard + screen reader: refresh/picker results announced, focus restored, visible focus on status", () => {
+    for (const L of ["en", "es"]) {
+      assert.ok(STRINGS[L].refreshed && STRINGS[L].pickPlace.includes("{n}"), L + " refreshed / pickPlace strings");
+    }
+    assert.notEqual(STRINGS.en.refreshed, STRINGS.es.refreshed);
+    const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    assert.match(html, /<p id="status" class="status" role="status" aria-live="polite" tabindex="-1">/);
+    const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+    assert.ok(app.includes('if (force && !cacheStatusText()) setStatus(t("refreshed"))'), "successful refresh says so in the live region");
+    assert.ok(app.includes('if (force) restoreFocus(returnTo, $("status"))') && app.includes('if (force) restoreFocus(returnTo, $("retryBtn"))'), "focus put back after refresh");
+    assert.ok(app.includes('setStatus(t("pickPlace").replace("{n}", results.length))'), "picker announced");
+    const css = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+    assert.ok(/#status:focus-visible\s*\{/.test(css), "status line shows a focus ring when focused from the keyboard");
   });
 }
 
