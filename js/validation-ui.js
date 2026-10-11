@@ -10,18 +10,18 @@ const V = {
     intro: (n, pts, from, to) => `HeatWise's numbers come from code, so we checked them against the official forecast of the National Weather Service (NWS) for ${pts} Houston-area points: every forecast hour we could get, ${n.toLocaleString("en-US")} point-hours (${from} to ${to}). We call this <b>agreement</b>, not accuracy: the NWS numbers are forecasts too, made with their own methods.`,
     tileHi: "Heat index vs NWS",
     tileHiSub: (s) => `Mean difference (bias) ${sg(s.bias)}°F · ${pc(s.within1)} of ${s.n} hours within 1°F · ${pc(s.roundedExact)} identical after rounding to whole degrees like the NWS · r = ${s.r.toFixed(3)}`,
-    tileWs: "WBGT vs NWS, same weather",
-    tileWsSub: (s, c) => `Bias ${sg(s.bias)}°F · Texas UIL flag matched in ${pc(s.flagAgree)} of ${s.n} hours, and was never more than one flag apart in ${pc(s.flagWithinOne)}. When the flags differed, HeatWise showed the more cautious flag ${c.higher} of ${c.total} times.`,
-    tileWa: "WBGT vs NWS, end to end",
-    tileWaSub: (s, a) => `Bias ${sg(s.bias)}°F · UIL flag matched in ${pc(s.flagAgree)} of hours. Most of the gap is the weather input: over these hours Open-Meteo's forecast (what the app uses) was ${Math.abs(a.dT).toFixed(1)}°F ${a.dT < 0 ? "cooler" : "warmer"} and ${Math.abs(a.dRH).toFixed(1)} points ${a.dRH < 0 ? "drier" : "more humid"} than the NWS forecast on average.`,
+    tileWs: "WBGT vs NWS, end to end (the app in the U.S.)",
+    tileWsSub: (s, c) => `Bias ${sg(s.bias)}°F, run through the app's real U.S. input path (NWS temperature, humidity and wind + Open-Meteo sunshine) · Texas UIL flag matched in ${pc(s.flagAgree)} of ${s.n} hours, and was never more than one flag apart in ${pc(s.flagWithinOne)}. When the flags differed, HeatWise showed the more cautious flag ${c.higher} of ${c.total} times.`,
+    tileWa: "WBGT vs NWS, backup path (Open-Meteo only)",
+    tileWaSub: (s, a) => `Bias ${sg(s.bias)}°F · UIL flag matched in ${pc(s.flagAgree)} of hours. This is the app outside the U.S. or when the NWS does not answer (and the app's only path before the NWS input was added). The gap is the weather input: over these hours Open-Meteo's forecast was ${Math.abs(a.dT).toFixed(1)}°F ${a.dT < 0 ? "cooler" : "warmer"} and ${Math.abs(a.dRH).toFixed(1)} points ${a.dRH < 0 ? "drier" : "more humid"} than the NWS forecast on average.`,
     mae: "mean absolute difference",
     chartHi: "Heat index: HeatWise vs NWS (°F), one dot per point-hour",
     chartHiAria: (s) => `Scatter plot of ${s.n} hours. Dots sit on the diagonal line of perfect agreement; mean absolute difference ${s.mae.toFixed(2)}°F.`,
-    chartWb: "WBGT: HeatWise (same NWS weather) vs NWS WBGT (°F)",
+    chartWb: "WBGT: HeatWise (app, U.S. inputs) vs NWS WBGT (°F)",
     chartWbAria: (s) => `Scatter plot of ${s.n} hours. Night hours sit on the diagonal; daytime hours sit slightly above it (HeatWise warmer in the sun). Mean absolute difference ${s.mae.toFixed(2)}°F.`,
     xNws: "NWS", yHw: "HeatWise", hiDot: "Heat index hour", day: "WBGT, daytime (sun up)", night: "WBGT, night", oneToOne: "Perfect agreement", band: "±2°F",
     tablePts: "Agreement at each point",
-    thPoint: "Point", thN: "Hours", thHiMae: "Heat index MAE", thHiBias: "Heat index bias", thWbMae: "WBGT MAE (same weather)", thWbBias: "WBGT bias",
+    thPoint: "Point", thN: "Hours", thHiMae: "Heat index MAE", thHiBias: "Heat index bias", thWbMae: "WBGT MAE (app, U.S. path)", thWbBias: "WBGT bias",
     replayTitle: "Replay: Houston's record heat, August 24, 2023",
     replayIntro: (peakT) => `On Thursday, August 24, 2023, Bush Intercontinental Airport (IAH) reached 109°F, tying Houston's all-time record high, during an NWS Excessive Heat Warning. We fed the airport's archived hourly weather reports (with archived sunshine) through HeatWise to see what a coach would have seen that day.`,
     rPeakHi: "Peak heat index", rPeakW: "Peak WBGT in the sun", rBlack: "Hours at UIL black flag", rBest: "Safest 2-hour practice window (6 AM–9 PM)",
@@ -37,12 +37,12 @@ const V = {
     methods: (m) => `<ol>
 <li><b>Forecast data.</b> For each point we requested the NWS gridded forecast (api.weather.gov <code>/points</code> → <code>forecastGridData</code>, Houston/Galveston office, issued ${m.issued}) and expanded every value to hourly steps. We kept only hours valid at or after the issue time and dropped missing values (the grid uses −120°F for “missing”).</li>
 <li><b>Heat index.</b> HeatWise's <code>heatIndexF()</code> (NWS Rothfusz regression with its adjustments) was run on the NWS forecast temperature and relative humidity and compared with the NWS forecast heat index for the same hour, for hours at or above 80°F, where the heat index is defined (below 80°F the NWS reports the air temperature). The NWS stores whole degrees, so even a perfect copy shows up to ±0.5°F from rounding.</li>
-<li><b>WBGT, same weather.</b> HeatWise's Liljegren WBGT was run with the NWS forecast temperature, humidity and wind. The NWS grid has no sunshine value, so solar radiation and pressure come from Open-Meteo for the same hour. Compared with the NWS WBGT forecast (operational since 2022).</li>
-<li><b>WBGT, end to end.</b> The app's real pipeline: Open-Meteo temperature, humidity, sunshine, wind and pressure, compared with the NWS WBGT.</li>
+<li><b>WBGT, end to end (U.S. path).</b> The archived NWS grid was rebuilt in the API's own format and fed through the same code the app runs for a U.S. place (<code>forecast.js</code>: <code>nwsHourly()</code> then <code>mergeInputs()</code>): NWS temperature, humidity and wind, with solar radiation and pressure from Open-Meteo for the same hour, because the NWS grid has no sunshine value. HeatWise's Liljegren WBGT on those inputs was compared with the NWS WBGT forecast (operational since 2022). It gives exactly the same numbers as running the NWS weather straight from the snapshot, so the app adds no error of its own.</li>
+<li><b>WBGT, backup path.</b> Every input from Open-Meteo, as the app runs outside the U.S. or when the NWS request fails, compared with the same NWS WBGT.</li>
 <li><b>Statistics.</b> Difference = HeatWise − NWS. Bias = mean difference; MAE = mean absolute difference; r = Pearson correlation. Flags use the Texas UIL Class 3 thresholds.</li>
 <li><b>Replay.</b> Hourly routine reports (METARs, at :53) from IAH for Aug 24, 2023, from the Iowa Environmental Mesonet ASOS archive; each report stands for the following top of the hour. Sunshine and pressure come from the Open-Meteo historical (ERA5) archive, because airports do not measure sunshine.</li>
 </ol>
-<p><b>Limits.</b> One week of forecasts from one NWS issue in October, so few very hot hours; a longer, summer study would be stronger. Agreement with the NWS is not the same as matching a WBGT meter on a field. The NWS WBGT uses its own method and inputs (such as sky cover instead of measured sunshine), so some daytime difference is expected. The end-to-end gap shows that the weather forecast feeding HeatWise matters more than the formula; using the NWS grid as the input for US locations is the obvious next step.</p>`,
+<p><b>Limits.</b> One week of forecasts from one NWS issue in October, so few very hot hours; a longer, summer study would be stronger. Agreement with the NWS is not the same as matching a WBGT meter on a field. The NWS WBGT uses its own method and inputs (such as sky cover instead of measured sunshine), so some daytime difference is expected. The backup path's gap shows that the weather forecast feeding HeatWise matters more than the formula, which is why U.S. plans now use the NWS grid. Places outside the U.S. still depend on Open-Meteo, and this study cannot say how far off it is there. Daytime WBGT on the U.S. path runs a little warmer than the NWS (the cautious direction).</p>`,
     sources: "Data and sources: ",
     loadErr: "Could not load the validation data.",
   },
@@ -51,18 +51,18 @@ const V = {
     intro: (n, pts, from, to) => `Los números de HeatWise salen de código, así que los comparamos con el pronóstico oficial del Servicio Meteorológico Nacional (NWS) de EE. UU. para ${pts} puntos del área de Houston: cada hora de pronóstico que pudimos obtener, ${n.toLocaleString("es-US")} horas-punto (del ${from} al ${to}). Lo llamamos <b>coincidencia</b>, no exactitud: los números del NWS también son pronósticos, hechos con sus propios métodos.`,
     tileHi: "Índice de calor vs NWS",
     tileHiSub: (s) => `Diferencia media (sesgo) ${sg(s.bias)}°F · ${pc(s.within1)} de ${s.n} horas a 1°F o menos · ${pc(s.roundedExact)} idénticas al redondear a grados enteros como el NWS · r = ${s.r.toFixed(3)}`,
-    tileWs: "WBGT vs NWS, mismo clima",
-    tileWsSub: (s, c) => `Sesgo ${sg(s.bias)}°F · la bandera UIL de Texas coincidió en ${pc(s.flagAgree)} de ${s.n} horas, y nunca estuvo a más de una bandera en ${pc(s.flagWithinOne)}. Cuando las banderas no coincidieron, HeatWise mostró la bandera más prudente ${c.higher} de ${c.total} veces.`,
-    tileWa: "WBGT vs NWS, de principio a fin",
-    tileWaSub: (s, a) => `Sesgo ${sg(s.bias)}°F · la bandera UIL coincidió en ${pc(s.flagAgree)} de las horas. Casi toda la diferencia viene del pronóstico de entrada: en estas horas el pronóstico de Open-Meteo (el que usa la app) fue en promedio ${Math.abs(a.dT).toFixed(1)}°F ${a.dT < 0 ? "más fresco" : "más cálido"} y ${Math.abs(a.dRH).toFixed(1)} puntos ${a.dRH < 0 ? "más seco" : "más húmedo"} que el del NWS.`,
+    tileWs: "WBGT vs NWS, de principio a fin (la app en EE. UU.)",
+    tileWsSub: (s, c) => `Sesgo ${sg(s.bias)}°F, calculado con el proceso real de la app en EE. UU. (temperatura, humedad y viento del NWS + sol de Open-Meteo) · la bandera UIL de Texas coincidió en ${pc(s.flagAgree)} de ${s.n} horas, y nunca estuvo a más de una bandera en ${pc(s.flagWithinOne)}. Cuando las banderas no coincidieron, HeatWise mostró la bandera más prudente ${c.higher} de ${c.total} veces.`,
+    tileWa: "WBGT vs NWS, respaldo (solo Open-Meteo)",
+    tileWaSub: (s, a) => `Sesgo ${sg(s.bias)}°F · la bandera UIL coincidió en ${pc(s.flagAgree)} de las horas. Así funciona la app fuera de EE. UU. o cuando el NWS no responde (y era su único proceso antes de usar el NWS). La diferencia viene del pronóstico de entrada: en estas horas el pronóstico de Open-Meteo fue en promedio ${Math.abs(a.dT).toFixed(1)}°F ${a.dT < 0 ? "más fresco" : "más cálido"} y ${Math.abs(a.dRH).toFixed(1)} puntos ${a.dRH < 0 ? "más seco" : "más húmedo"} que el del NWS.`,
     mae: "diferencia absoluta media",
     chartHi: "Índice de calor: HeatWise vs NWS (°F), un punto por hora y lugar",
     chartHiAria: (s) => `Gráfica de dispersión de ${s.n} horas. Los puntos quedan sobre la diagonal de coincidencia perfecta; diferencia absoluta media ${s.mae.toFixed(2)}°F.`,
-    chartWb: "WBGT: HeatWise (mismo clima del NWS) vs WBGT del NWS (°F)",
+    chartWb: "WBGT: HeatWise (app, datos de EE. UU.) vs WBGT del NWS (°F)",
     chartWbAria: (s) => `Gráfica de dispersión de ${s.n} horas. Las horas de noche quedan sobre la diagonal; las de día un poco arriba (HeatWise más cálido al sol). Diferencia absoluta media ${s.mae.toFixed(2)}°F.`,
     xNws: "NWS", yHw: "HeatWise", hiDot: "Hora de índice de calor", day: "WBGT, de día (con sol)", night: "WBGT, de noche", oneToOne: "Coincidencia perfecta", band: "±2°F",
     tablePts: "Coincidencia en cada punto",
-    thPoint: "Punto", thN: "Horas", thHiMae: "MAE índice de calor", thHiBias: "Sesgo índice de calor", thWbMae: "MAE WBGT (mismo clima)", thWbBias: "Sesgo WBGT",
+    thPoint: "Punto", thN: "Horas", thHiMae: "MAE índice de calor", thHiBias: "Sesgo índice de calor", thWbMae: "MAE WBGT (app, EE. UU.)", thWbBias: "Sesgo WBGT",
     replayTitle: "Repetición: el calor récord de Houston, 24 de agosto de 2023",
     replayIntro: () => `El jueves 24 de agosto de 2023, el aeropuerto Bush Intercontinental (IAH) llegó a 109°F, igualando el récord histórico de Houston, durante una Advertencia de Calor Excesivo del NWS. Pasamos los reportes horarios archivados del aeropuerto (con la radiación solar archivada) por HeatWise para ver lo que un entrenador habría visto ese día.`,
     rPeakHi: "Índice de calor máximo", rPeakW: "WBGT máximo al sol", rBlack: "Horas con bandera negra UIL", rBest: "Horario más seguro de 2 horas (6 a. m.–9 p. m.)",
@@ -78,12 +78,12 @@ const V = {
     methods: (m) => `<ol>
 <li><b>Datos de pronóstico.</b> Para cada punto pedimos el pronóstico en cuadrícula del NWS (api.weather.gov <code>/points</code> → <code>forecastGridData</code>, oficina de Houston/Galveston, emitido el ${m.issued}) y pasamos cada valor a pasos de una hora. Solo usamos horas válidas desde la hora de emisión y quitamos valores faltantes (la cuadrícula usa −120°F para “faltante”).</li>
 <li><b>Índice de calor.</b> La función <code>heatIndexF()</code> de HeatWise (regresión de Rothfusz del NWS con sus ajustes) se aplicó a la temperatura y humedad relativa del pronóstico del NWS y se comparó con el índice de calor del NWS para la misma hora, en horas de 80°F o más, donde el índice está definido (debajo de 80°F el NWS reporta la temperatura del aire). El NWS guarda grados enteros, así que incluso una copia perfecta difiere hasta ±0.5°F por redondeo.</li>
-<li><b>WBGT, mismo clima.</b> El WBGT de Liljegren de HeatWise se calculó con la temperatura, humedad y viento del pronóstico del NWS. La cuadrícula del NWS no trae radiación solar, así que la radiación y la presión vienen de Open-Meteo para la misma hora. Se comparó con el pronóstico de WBGT del NWS (operativo desde 2022).</li>
-<li><b>WBGT, de principio a fin.</b> El proceso real de la app: temperatura, humedad, radiación, viento y presión de Open-Meteo, comparado con el WBGT del NWS.</li>
+<li><b>WBGT, de principio a fin (EE. UU.).</b> La cuadrícula archivada del NWS se reconstruyó en el formato de la propia API y pasó por el mismo código que usa la app para un lugar de EE. UU. (<code>forecast.js</code>: <code>nwsHourly()</code> y luego <code>mergeInputs()</code>): temperatura, humedad y viento del NWS, con radiación solar y presión de Open-Meteo para la misma hora, porque la cuadrícula del NWS no trae radiación. El WBGT de Liljegren de HeatWise con esos datos se comparó con el pronóstico de WBGT del NWS (operativo desde 2022). Da exactamente los mismos números que usar el clima del NWS directo del archivo, así que la app no agrega error propio.</li>
+<li><b>WBGT, respaldo.</b> Todos los datos de Open-Meteo, como funciona la app fuera de EE. UU. o cuando falla el NWS, comparado con el mismo WBGT del NWS.</li>
 <li><b>Estadística.</b> Diferencia = HeatWise − NWS. Sesgo = diferencia media; MAE = diferencia absoluta media; r = correlación de Pearson. Las banderas usan los límites de la Clase 3 de la UIL de Texas.</li>
 <li><b>Repetición.</b> Reportes horarios de rutina (METAR, a los :53) de IAH del 24 de agosto de 2023, del archivo ASOS del Iowa Environmental Mesonet; cada reporte representa la hora en punto siguiente. La radiación solar y la presión vienen del archivo histórico de Open-Meteo (ERA5), porque los aeropuertos no miden la radiación.</li>
 </ol>
-<p><b>Límites.</b> Una semana de pronósticos de una sola emisión del NWS en octubre, con pocas horas muy calurosas; un estudio más largo y en verano sería más sólido. Coincidir con el NWS no es lo mismo que coincidir con un medidor de WBGT en la cancha. El WBGT del NWS usa su propio método y datos (por ejemplo, nubosidad en vez de radiación medida), así que se espera algo de diferencia de día. La diferencia de principio a fin muestra que el pronóstico que alimenta a HeatWise importa más que la fórmula; usar la cuadrícula del NWS como entrada en EE. UU. es el siguiente paso lógico.</p>`,
+<p><b>Límites.</b> Una semana de pronósticos de una sola emisión del NWS en octubre, con pocas horas muy calurosas; un estudio más largo y en verano sería más sólido. Coincidir con el NWS no es lo mismo que coincidir con un medidor de WBGT en la cancha. El WBGT del NWS usa su propio método y datos (por ejemplo, nubosidad en vez de radiación medida), así que se espera algo de diferencia de día. La diferencia del respaldo muestra que el pronóstico que alimenta a HeatWise importa más que la fórmula; por eso los planes en EE. UU. ahora usan la cuadrícula del NWS. Fuera de EE. UU. la app sigue dependiendo de Open-Meteo, y este estudio no puede decir cuánto se desvía allí. De día, el WBGT del proceso de EE. UU. sale un poco más alto que el del NWS (la dirección prudente).</p>`,
     sources: "Datos y fuentes: ",
     loadErr: "No se pudieron cargar los datos de validación.",
   },
@@ -110,10 +110,11 @@ async function load() {
 /** Every number shown in the section (exported for the tests). */
 export function computeAll(nws, om, day) {
   const hi = compareHeatIndex(nws);
-  const same = compareWbgt(nws, om, { mode: "same" });
-  const app = compareWbgt(nws, om, { mode: "app" });
+  const same = compareWbgt(nws, om, { mode: "same" });       // NWS weather straight from the snapshot
+  const app = compareWbgt(nws, om, { mode: "app" });         // the app's U.S. path (forecast.js)
+  const fallback = compareWbgt(nws, om, { mode: "fallback" }); // Open-Meteo only
   const rank = (f) => UIL_FLAGS.indexOf(f);
-  const dis = same.pairs.filter((p) => p.fHw !== p.fNws);
+  const dis = app.pairs.filter((p) => p.fHw !== p.fNws);
   const cautious = { higher: dis.filter((p) => rank(p.fHw) > rank(p.fNws)).length, total: dis.length };
   // Average input difference (Open-Meteo minus NWS) over the compared hours.
   let dT = 0, dRH = 0, n = 0;
@@ -126,9 +127,9 @@ export function computeAll(nws, om, day) {
   const rows = forecastRows(nws.points[0]);
   const totalHours = nws.points.reduce((a, p) => a + forecastRows(p).length, 0);
   return {
-    hi, same, app, cautious, inputs: { dT: dT / n, dRH: dRH / n, n }, replay, iemDiff,
+    hi, same, app, fallback, cautious, inputs: { dT: dT / n, dRH: dRH / n, n }, replay, iemDiff,
     window: { from: Date.parse(rows[0][0]), to: Date.parse(rows.at(-1)[0]), issued: Date.parse(nws.points[0].updateTime), totalHours, points: nws.points.length },
-    perPoint: byPoint(hi.pairs).map((h) => ({ ...h, wb: errorStats(same.pairs.filter((p) => p.point === h.point).map((p) => p.diff)), name: nws.points.find((p) => p.id === h.point).name })),
+    perPoint: byPoint(hi.pairs).map((h) => ({ ...h, wb: errorStats(app.pairs.filter((p) => p.point === h.point).map((p) => p.diff)), name: nws.points.find((p) => p.id === h.point).name })),
   };
 }
 
@@ -155,12 +156,12 @@ export async function renderValidation(newLang = lang) {
     <p>${S.intro(w.totalHours, w.points, fmtDay(w.from), fmtDay(w.to))}</p>
     <div class="vtiles">
       <div class="vtile"><h3>${esc(S.tileHi)}</h3><p class="vbig">${R.hi.stats.mae.toFixed(2)}°F</p><p class="vlabel">${esc(S.mae)}</p><p class="small">${esc(S.tileHiSub(R.hi.stats))}</p></div>
-      <div class="vtile"><h3>${esc(S.tileWs)}</h3><p class="vbig">${R.same.stats.mae.toFixed(2)}°F</p><p class="vlabel">${esc(S.mae)}</p><p class="small">${esc(S.tileWsSub(R.same.stats, R.cautious))}</p></div>
-      <div class="vtile"><h3>${esc(S.tileWa)}</h3><p class="vbig">${R.app.stats.mae.toFixed(2)}°F</p><p class="vlabel">${esc(S.mae)}</p><p class="small">${esc(S.tileWaSub(R.app.stats, R.inputs))}</p></div>
+      <div class="vtile"><h3>${esc(S.tileWs)}</h3><p class="vbig">${R.app.stats.mae.toFixed(2)}°F</p><p class="vlabel">${esc(S.mae)}</p><p class="small">${esc(S.tileWsSub(R.app.stats, R.cautious))}</p></div>
+      <div class="vtile"><h3>${esc(S.tileWa)}</h3><p class="vbig">${R.fallback.stats.mae.toFixed(2)}°F</p><p class="vlabel">${esc(S.mae)}</p><p class="small">${esc(S.tileWaSub(R.fallback.stats, R.inputs))}</p></div>
     </div>
     <div class="grid2 vcharts">
       <figure><figcaption>${esc(S.chartHi)}</figcaption><div class="chart" id="vChartHi" role="img" aria-label="${esc(S.chartHiAria(R.hi.stats))}"></div></figure>
-      <figure><figcaption>${esc(S.chartWb)}</figcaption><div class="chart" id="vChartWb" role="img" aria-label="${esc(S.chartWbAria(R.same.stats))}"></div></figure>
+      <figure><figcaption>${esc(S.chartWb)}</figcaption><div class="chart" id="vChartWb" role="img" aria-label="${esc(S.chartWbAria(R.app.stats))}"></div></figure>
     </div>
     <ul class="legend small">
       <li><span class="sw dot" style="background:#57534e"></span>${esc(S.hiDot)}</li>
@@ -211,7 +212,7 @@ function drawAll() {
   if (!cache) return;
   const R = cache.results;
   scatter(document.getElementById("vChartHi"), R.hi.pairs, () => "#57534e", 2);
-  scatter(document.getElementById("vChartWb"), R.same.pairs, (p) => (p.day ? "#7c2d12" : "#2563eb"), 2);
+  scatter(document.getElementById("vChartWb"), R.app.pairs, (p) => (p.day ? "#7c2d12" : "#2563eb"), 2);
   replayChart(document.getElementById("vChartReplay"), R.replay);
 }
 
