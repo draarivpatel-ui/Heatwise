@@ -810,6 +810,29 @@ test("all-clear: only when every allowed hour is green/lower risk (EN/ES strings
     assert.equal(c.cacheFallback, false, "a plain repeat lookup within 30 min is a normal reuse");
     mode = "ok";
   });
+  atest("offline (fetch throws, NWS + Open-Meteo): saved answer stands in, flagged cacheFallback; with nothing saved it rejects, never hangs", async () => {
+    const st = mem(); const t0 = 1e12;
+    await getForecastCached(29.7, -95.3, { storage: st, now: t0, fetchImpl: f, useNws: false });
+    let offCalls = 0;
+    const offline = async () => { offCalls++; throw new TypeError("Failed to fetch"); };
+    const a = await getForecastCached(29.7, -95.3, { storage: st, now: t0 + 40 * 60e3, fetchImpl: offline });
+    assert.ok(offCalls >= 1, "tried the network"); assert.equal(a.cachedAt, t0); assert.equal(a.cacheFallback, true);
+    const b = await getForecastCached(29.7, -95.3, { storage: st, now: t0 + 5 * 60e3, force: true, fetchImpl: offline });
+    assert.equal(b.cacheFallback, true, "Refresh now while offline keeps the saved answer");
+    const t1 = Date.now();
+    await assert.rejects(getForecastCached(29.7, -95.3, { storage: mem(), now: t0, fetchImpl: offline }));
+    assert.ok(Date.now() - t1 < 5000, "fails fast offline");
+  });
+  test("offline message: EN/ES errOffline says offline + SYNTHETIC sample + reconnect; app picks it when navigator.onLine is false; errors re-worded on language switch", () => {
+    assert.match(STRINGS.en.errOffline, /offline/i); assert.match(STRINGS.en.errOffline, /SYNTHETIC/); assert.match(STRINGS.en.errOffline, /Try again/);
+    assert.match(STRINGS.es.errOffline, /conexión/); assert.match(STRINGS.es.errOffline, /SINTÉTICO/); assert.match(STRINGS.es.errOffline, /Intentar de nuevo/);
+    assert.doesNotMatch(STRINGS.es.errOffline, /offline|Try again|sample/i, "no English left in the Spanish line");
+    const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+    assert.ok(app.includes('t(navigator.onLine === false ? "errOffline" : "errApi")'));
+    const m = app.match(/const REWORD_KEYS = \[([^\]]+)\]/);
+    assert.ok(m, "REWORD_KEYS list"); for (const k of ["refreshed", "errApi", "errOffline", "errNet", "needPlace"]) assert.ok(m[1].includes(`"${k}"`), k);
+    for (const k of ["refreshed", "errApi", "errOffline", "errNet", "needPlace"]) assert.ok(STRINGS.en[k] && STRINGS.es[k] && STRINGS.en[k] !== STRINGS.es[k], k + " EN/ES");
+  });
   test("Refresh now: EN/ES strings, a real <button> beside the status, wired to force", () => {
     for (const L of ["en", "es"]) {
       assert.ok(STRINGS[L].refreshNow && STRINGS[L].refreshing, L + " refresh strings");
