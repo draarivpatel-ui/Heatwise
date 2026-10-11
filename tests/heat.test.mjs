@@ -833,6 +833,38 @@ test("all-clear: only when every allowed hour is green/lower risk (EN/ES strings
     assert.ok(m, "REWORD_KEYS list"); for (const k of ["refreshed", "errApi", "errOffline", "errNet", "needPlace"]) assert.ok(m[1].includes(`"${k}"`), k);
     for (const k of ["refreshed", "errApi", "errOffline", "errNet", "needPlace"]) assert.ok(STRINGS.en[k] && STRINGS.es[k] && STRINGS.en[k] !== STRINGS.es[k], k + " EN/ES");
   });
+  atest("service worker: caches every file the page loads + the replay data, network first, own caches only, http(s) only", async () => {
+    const vm = await import("node:vm");
+    const src = fs.readFileSync(new URL("../sw.js", import.meta.url), "utf8");
+    const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    const mk = (online, names = []) => {
+      const stores = {}; names.forEach((n) => { stores[n] = new Map(); }); const h = {};
+      const key = (k) => (typeof k === "string" ? k : k.url);
+      const sb = { URL, self: { addEventListener: (t, f) => { h[t] = f; }, location: { origin: "https://aariv.me" }, skipWaiting: async () => {}, clients: { claim: async () => {} } },
+        caches: { open: async (n) => { stores[n] = stores[n] || new Map(); const m = stores[n]; return { addAll: async (l) => l.forEach((u) => m.set(u, "cached:" + u)), put: async (k, v) => m.set(key(k), v) }; },
+          keys: async () => Object.keys(stores), delete: async (n) => delete stores[n],
+          match: async (k) => { for (const m of Object.values(stores)) if (m.has(key(k))) return m.get(key(k)); } },
+        fetch: async (r) => { if (!online) throw new TypeError("Failed to fetch"); return { ok: true, body: "net", clone() { return { body: "net" }; } }; } };
+      vm.runInNewContext(src, sb); return { h, stores, ...vm.runInNewContext("({VERSION, CACHE, SHELL})", sb) };
+    };
+    const fire = (h, t, x) => { let r = null, w = null; h[t]({ ...x, respondWith: (p) => { r = p; }, waitUntil: (p) => { w = p; } }); return { r, w }; };
+    const s = mk(true);
+    const refs = [...html.matchAll(/<link rel="(?:stylesheet|modulepreload)" href="([^"]+)"/g)].map((m) => m[1]).concat([...html.matchAll(/<script type="module" src="([^"]+)"/g)].map((m) => m[1]));
+    assert.ok(refs.length >= 9); refs.forEach((r) => assert.ok(s.SHELL.includes(r), "SHELL misses " + r));
+    for (const f of fs.readdirSync(new URL("../js/", import.meta.url))) assert.ok(s.SHELL.includes("js/" + f), "SHELL misses js/" + f);
+    assert.ok(s.SHELL.includes("data/validation/replay-iah-2023-08-24.json"), "replay works offline");
+    s.SHELL.filter((f) => f !== "./").forEach((f) => assert.ok(fs.existsSync(new URL("../" + f, import.meta.url)), f + " exists"));
+    assert.equal(s.CACHE, "heatwise-" + s.VERSION);
+    const old = mk(true, ["heatwise-hw-0", "screentalk-st-1", "breatheeasy-be-1"]);
+    await fire(old.h, "install").w; await fire(old.h, "activate").w;
+    assert.deepEqual(Object.keys(old.stores).sort(), ["breatheeasy-be-1", old.CACHE, "screentalk-st-1"].sort());
+    assert.equal((await fire(s.h, "fetch", { request: { method: "GET", url: "https://aariv.me/Heatwise/js/app.js", mode: "no-cors" } }).r).body, "net");
+    const off = mk(false); await fire(off.h, "install").w;
+    assert.equal(await fire(off.h, "fetch", { request: { method: "GET", url: "https://aariv.me/Heatwise/?lat=29.6&lon=-95.6", mode: "navigate" } }).r, "cached:index.html");
+    assert.equal(fire(s.h, "fetch", { request: { method: "GET", url: "https://api.open-meteo.com/v1/forecast", mode: "cors" } }).r, null, "weather APIs not intercepted");
+    const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+    assert.ok(app.includes('"serviceWorker" in navigator && /^https?:$/.test(location.protocol)') && app.includes('navigator.serviceWorker.register("sw.js")'));
+  });
   test("Refresh now: EN/ES strings, a real <button> beside the status, wired to force", () => {
     for (const L of ["en", "es"]) {
       assert.ok(STRINGS[L].refreshNow && STRINGS[L].refreshing, L + " refresh strings");
