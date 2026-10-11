@@ -140,3 +140,10 @@ The validation study showed the formulas match the NWS but the Open-Meteo inputs
 | Spanish polish | "109°F" → "109 °F" in the replay hint and banner (matches the "103 °F" style used elsewhere in ES). The backup-source warning keeps "4°F" because a test pins it to the study's number. |
 | Tests | 54 → **55** passing (new: WBGT line placed after the source line, wired to i18n, defined in EN and ES). |
 | Checks | Code-level only (no Chromium in this sandbox); one plain `<p class="small muted">`, no new interactive elements or colours, so no new axe surface. |
+
+## 2026-10-11 (9:50 AM ET): strict-judge review (Coding + Problem in Community), 390 px phone, EN/ES
+Walked through it as a Houston-area coach on a 390 px phone with real api.weather.gov / Open-Meteo answers, in English and Spanish. Shipped the top 3:
+1. **Place search could hang forever.** `geocode()` had no timeout, so a stalled phone connection left "Searching…" up with every button disabled. Search now goes through `fetchJson` with an 8 s timeout (headless check: gives up after 8.1 s with the "couldn't reach the place search" message in EN and ES, buttons re-enabled).
+2. **Every Houston suburb needed an extra tap.** "Houston", "Katy", "Spring", "Pearland", "Humble", "Baytown", "Conroe" all opened a picker (Katy listed Polish villages). New `js/places.js` ranks by state hint, then population, and skips the picker when the top match is ≥10× bigger than the next; Pasadena (TX vs CA) and Cypress still ask, Texas first. The state-hint table now covers all 50 states + DC + PR (it had 11), matched whole-word.
+3. **Answer first on a phone.** The source line and the WBGT definition sat above the verdict, pushing "Safest window" below the fold at 390 px. They now follow the two cards (replay/sample labels stay on top), so both verdicts fit on the first screen after "Build my heat plan".
+Tests 55 → 59 (`node tests/heat.test.mjs`), headless Chromium QA (mocked flows, axe, overflow at 390 px, EN/ES) clean apart from the intentional mocked 404/429 errors.
