@@ -17,6 +17,7 @@ import {
   inNwsArea, nwsHourly, mergeInputs, nwsOnlyHours, rhFromDewpoint, getForecast, fetchNwsGrid, NWS_USER_AGENT, NWS_MAX_AGE_MS,
 } from "../js/forecast.js";
 import { REPLAY, replayHours, dayKey, planDays, coachPlan, coachPlanText } from "../js/plan.js";
+import { parseQuery, rankPlaces, autoPick, searchPlaces, US_STATES } from "../js/places.js";
 
 let passed = 0;
 function test(name, fn) {
@@ -671,6 +672,73 @@ test("page wiring: replay button sits above the form, coach plan card + print-on
     assert.match(STRINGS[lang].chartAriaReplay("78°F", "94°F", "6 AM – 8 AM"), /2023/);
   }
   assert.ok(!fs.existsSync(new URL("../heatwise.zip", import.meta.url)), "stale heatwise.zip removed");
+});
+
+// ---------- place search (js/places.js): real Open-Meteo geocoding answers, trimmed (Oct 11, 2026) ----------
+const G = (name, admin1, cc, population, lat = 29.7, lon = -95.4) => ({ name, admin1, country_code: cc, population, latitude: lat, longitude: lon });
+const GEO_FX = {
+  Houston: [G("Houston", "Texas", "US", 2314157), G("Houston", "Missouri", "US", 2082), G("Houston", "Mississippi", "US", 3544), G("Houston", "Alaska", "US", 2206), G("Houston", "Pennsylvania", "US", 1266)],
+  Katy: [G("Katy", "Texas", "US", 16158), G("Kąty", "Podlasie", "PL"), G("Kąty", "Podlasie", "PL"), G("Kąty", "Mazovia", "PL"), G("Kąty", "Podlasie", "PL")],
+  Pasadena: [G("Pasadena", "Texas", "US", 153784), G("Pasadena", "California", "US", 142250), G("Pasadena", "Maryland", "US", 24287), G("Pasadena", "Newfoundland and Labrador", "CA", 3620), G("Pasadena", "Mimaropa", "PH")],
+  Spring: [G("Spring", "Texas", "US", 54298), G("Şpring", "Alba County", "RO", 2492), G("Spring", "Brandenburg", "DE")],
+  Cypress: [G("Cypress", "Texas", "US", 200839), G("Cypress", "California", "US", 49290), G("Cypress", "Illinois", "US", 236)],
+};
+
+test("place search: parseQuery splits the state/country hint off the name", () => {
+  assert.deepEqual(parseQuery("Sugar Land, TX"), { main: "Sugar Land", hint: "tx" });
+  assert.deepEqual(parseQuery("  77479 "), { main: "77479", hint: "" });
+  assert.deepEqual(parseQuery("Pasadena, California, US"), { main: "Pasadena", hint: "california us" });
+  assert.equal(Object.keys(US_STATES).length, 52, "50 states + DC + Puerto Rico");
+});
+
+test("place search: Houston-area towns open straight away; truly ambiguous names still ask", () => {
+  // Before: every one of these showed a 'pick a place' list (Katy listed Polish villages), one extra tap on a phone.
+  for (const q of ["Houston", "Katy", "Spring"]) {
+    const pick = autoPick(rankPlaces(GEO_FX[q]));
+    assert.ok(pick, q + " auto-picks");
+    assert.equal(pick.name, `${q}, Texas, US`);
+  }
+  // Pasadena TX vs CA are about the same size: show the list, Texas first (bigger).
+  const pas = rankPlaces(GEO_FX.Pasadena);
+  assert.equal(autoPick(pas), null);
+  assert.equal(pas[0].name, "Pasadena, Texas, US");
+  assert.equal(autoPick(rankPlaces(GEO_FX.Cypress)), null, "Cypress TX is only 4x Cypress CA: ask");
+  // A state hint decides it, whole-word only.
+  assert.equal(autoPick(rankPlaces(GEO_FX.Pasadena, "california")).name, "Pasadena, California, US");
+  assert.equal(autoPick(rankPlaces(GEO_FX.Pasadena, "md")).name, "Pasadena, Maryland, US");
+  assert.equal(autoPick(rankPlaces(GEO_FX.Houston, "ms")).name, "Houston, Mississippi, US");
+  assert.equal(rankPlaces(GEO_FX.Houston, "texas")[0].score, 1);
+  assert.equal(rankPlaces(GEO_FX.Houston, "atx").every((r) => r.score === 0), true, "'tx' inside another word is not a hint");
+  // Edge cases: nothing, one result, tiny places with no population never auto-pick on size alone.
+  assert.equal(autoPick(rankPlaces([])), null);
+  assert.equal(autoPick(rankPlaces([G("Sugar Land", "Texas", "US", 88156)])).name, "Sugar Land, Texas, US");
+  assert.equal(autoPick(rankPlaces([G("A", "Texas", "US", 500), G("A", "Ohio", "US")])), null);
+  assert.ok(rankPlaces(GEO_FX.Houston.concat(GEO_FX.Katy)).length <= 5);
+});
+
+atest("place search: a stalled connection times out instead of leaving 'Searching…' up forever", async () => {
+  const hang = (url, { signal } = {}) => new Promise((_, reject) => signal?.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" }))));
+  const t0 = Date.now();
+  await assert.rejects(searchPlaces("Katy", "en", { fetchImpl: hang, timeoutMs: 40 }));
+  assert.ok(Date.now() - t0 < 1000, "gave up quickly");
+  let seen = "";
+  const ok = async (url) => { seen = url; return { ok: true, status: 200, json: async () => ({ results: GEO_FX.Katy }) }; };
+  const r = await searchPlaces("Katy, TX", "es", { fetchImpl: ok });
+  assert.match(seen, /name=Katy&count=8&language=es/);
+  assert.equal(r.pick.name, "Katy, Texas, US");
+  const bad = async () => ({ ok: false, status: 429, json: async () => ({ error: true, reason: "limit" }) });
+  await assert.rejects(searchPlaces("Katy", "en", { fetchImpl: bad }), /limit/);
+  const empty = async () => ({ ok: true, status: 200, json: async () => ({ generationtime_ms: 0.1 }) });
+  assert.deepEqual(await searchPlaces("zzzz", "en", { fetchImpl: empty }), { ranked: [], pick: null });
+});
+
+test("page wiring: on a phone the plan's answer (this hour + safest window) comes before the source and WBGT notes", () => {
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  const at = (id) => html.indexOf(`id="${id}"`);
+  assert.ok(at("replayBanner") < at("nowCard") && at("sampleBanner") < at("nowCard"), "replay/sample labels stay above the answer");
+  assert.ok(at("bestCard") < at("forecastSource") && at("bestCard") < at("wbgtHelp"), "answer first");
+  assert.ok(app.includes('from "./places.js"') && !app.includes("async function geocode"), "search goes through places.js");
 });
 
 for (const [name, fn] of atests) {
