@@ -6,6 +6,7 @@ Serves the folder locally and stubs every API (NWS answers 500, so Open-Meteo is
   4. Nothing saved + 429 -> "Couldn't get the forecast ... SYNTHETIC sample day" + Try again.
   5. Nothing saved + offline + Try again -> the offline line (EN), re-worded in Spanish on the ES switch.
   6. Back online + Try again -> the real plan returns, warning gone.
+  7. Service worker: after one online visit, the shared link reloads with no signal (saved forecast, labelled) and the replay still loads.
 No page errors throughout. Usage: python3 tests/browser/offline_429_qa.py  (CHROME_PATH=/usr/bin/chromium optional)"""
 import re, json, os, sys, subprocess, time, math, socket
 from playwright.sync_api import sync_playwright
@@ -79,6 +80,30 @@ with sync_playwright() as p:
     # 6
     ctx.set_offline(False); mode["off"] = False; mode["om"] = "ok"; pg.click("#retryBtn"); idle()
     check("6 back online + Try again: real plan, no warning, Try again hidden", not sample() and not pg.evaluate("document.getElementById('status').classList.contains('error')") and not pg.is_visible("#retryBtn"), status())
+    # 7: service worker: reload with no signal after one online visit
+    oc = b.new_context(viewport={"width": 1280, "height": 900}, locale="en-US")
+    op = oc.new_page(); op.on("pageerror", lambda e: errors.append(str(e)))
+    op.route(re.compile(r"^https://geocoding-api\.open-meteo\.com/"), lambda r: r.abort("internetdisconnected") if mode.get("off") else r.fulfill(status=200, content_type="application/json", body=json.dumps(GEO), headers=H))
+    op.route(re.compile(r"^https://api\.open-meteo\.com/"), fc)
+    op.route(re.compile(r"^https://api\.weather\.gov/"), lambda r: r.abort("internetdisconnected") if mode.get("off") else r.fulfill(status=500, body="down", headers=H))
+    mode["om"] = "ok"; mode["off"] = False
+    op.goto(f"http://127.0.0.1:{PORT}/")
+    op.wait_for_function("navigator.serviceWorker.ready.then(() => true)", timeout=15000)
+    op.reload(); op.wait_for_function("!!navigator.serviceWorker.controller", timeout=15000)
+    check("7 service worker controls the page; one heatwise-* cache", op.evaluate("caches.keys()") == [k for k in op.evaluate("caches.keys()") if k.startswith("heatwise-")] and len(op.evaluate("caches.keys()")) == 1, op.evaluate("caches.keys()"))
+    op.fill("#place", "Sugar Land, TX"); op.press("#place", "Enter"); op.wait_for_selector("#results:not([hidden])", timeout=10000)
+    op.wait_for_function("!document.getElementById('searchBtn').disabled", timeout=15000); op.wait_for_timeout(300)
+    url = op.url
+    oc.set_offline(True); mode["off"] = True
+    op.goto(url); op.wait_for_selector("#results:not([hidden])", timeout=10000)
+    op.wait_for_function("!document.getElementById('searchBtn').disabled", timeout=15000); op.wait_for_timeout(300)
+    st7 = op.text_content("#status").strip()
+    sample7 = op.evaluate("/SYNTHETIC/.test(document.getElementById('results').innerText.slice(0, 3000))")
+    check("7 offline reload of the shared link: page opens and shows the saved forecast for that place, labelled with its age", ("min ago" in st7 or "didn't answer" in st7) and not sample7, st7)
+    op.click("#replayBtn"); op.wait_for_timeout(800)
+    check("7 offline: the record-day replay still loads (data cached by the service worker)", op.is_visible("#replayBanner"))
+    oc.set_offline(False); mode["off"] = False
+    oc.close()
     check("no page errors", not errors, errors)
     b.close()
 srv.terminate()
