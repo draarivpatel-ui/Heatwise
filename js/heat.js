@@ -402,6 +402,21 @@ export function bestWindow(scored, duration, allowed = () => true) {
 }
 
 /**
+ * True when every allowed hour in `scored` is at the lowest level (UIL green, or OSHA/NIOSH
+ * "low"), so any time in the user's practice hours is fine, not only the picked window.
+ * False when no hour is allowed.
+ */
+export function allClear(scored, allowed = () => true) {
+  let any = false;
+  for (let i = 0; i < scored.length; i++) {
+    if (!allowed(scored[i], i)) continue;
+    any = true;
+    if (scored[i].level !== "green" && scored[i].level !== "low") return false;
+  }
+  return any;
+}
+
+/**
  * Is hour-of-day `hr` inside the allowed daily window [earliest, latest)?
  * Supports overnight windows (e.g. earliest 20, latest 6). earliest === latest means all day.
  */
