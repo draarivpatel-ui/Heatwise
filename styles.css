@@ -117,6 +117,8 @@ footer { padding: 16px; text-align: center; }
   .top, form, .no-print, .math, details summary, .skip, .status-row, footer { display: none !important; }
   details > *:not(summary) { display: block !important; }
   .table-wrap { max-height: none; overflow: visible; border: 0; }
+  thead th { position: static; } /* a sticky header overlaps rows on page 2+ of a PDF; let the browser repeat it instead */
+  thead { display: table-header-group; } tr { break-inside: avoid; }
   body { background: #fff; }
   .card { break-inside: avoid; border-color: #999; }
   .print-only { display: block; }
