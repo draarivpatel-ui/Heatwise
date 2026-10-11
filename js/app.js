@@ -4,7 +4,7 @@
 // forecast and place-search requests.
 import {
   scoreHours, bestWindow, hourAllowed, hydrationPlan, acclimatizationSchedule, sampleHours,
-  cToF, localHour, SEVERITY, UIL_CLASSES, fToC, SAMPLE_PLACE, WORKLOADS, CLOTHING,
+  cToF, localHour, SEVERITY, UIL_CLASSES, fToC, SAMPLE_PLACE, WORKLOADS, CLOTHING, allClear
 } from "./heat.js";
 import { STRINGS, PRESETS } from "./i18n.js";
 import { renderValidation } from "./validation-ui.js";
@@ -228,7 +228,8 @@ function render(scrollTo = false) {
     setRiskCard("bestCard", worst.level);
     $("bestTime").innerHTML = `${escapeHtml(fmtTime(scored[best.start].t))} – ${escapeHtml(fmtTime(scored[best.end].t + 3600e3, false))}`;
     $("bestStats").innerHTML = `<dt>${t("worstHour")}</dt><dd>${pill(worst.level)} ${escapeHtml(fmtTime(worst.t, false))}</dd>` + statsHtml(worst, uil);
-    $("bestAdvice").textContent = advice(worst.level, uil) + (sameHours ? " " + t("hoursInvalid") : "");
+    const clear = allClear(scored, allowed);
+    $("bestAdvice").textContent = (clear ? t(uil ? "allClearUil" : "allClearOsha") + " " : "") + advice(worst.level, uil) + (sameHours ? " " + t("hoursInvalid") : "");
     if (uil && p.duration > worst.maxHours) {
       $("bestWarn").textContent = STRINGS[state.lang].windowTooLong(worst.maxHours);
       $("bestWarn").hidden = false;
