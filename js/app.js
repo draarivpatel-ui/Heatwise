@@ -6,6 +6,7 @@ import {
   cToF, localHour, SEVERITY, UIL_CLASSES, fToC, SAMPLE_PLACE, WORKLOADS, CLOTHING,
 } from "./heat.js";
 import { STRINGS, PRESETS } from "./i18n.js";
+import { renderValidation } from "./validation-ui.js";
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -34,6 +35,7 @@ function applyLang() {
   fillHourSelect($("latest"), l === "" ? 21 : Number(l), true);
   renderPlaceLabel();
   if (state.data) render();
+  renderValidation(state.lang);
 }
 
 function fillHourSelect(sel, value, allowMidnight) {
