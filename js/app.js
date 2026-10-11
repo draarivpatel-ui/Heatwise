@@ -8,7 +8,7 @@ import {
 } from "./heat.js";
 import { STRINGS, PRESETS } from "./i18n.js";
 import { renderValidation } from "./validation-ui.js";
-import { getForecast } from "./forecast.js";
+import { getForecastCached } from "./forecast.js";
 import { searchPlaces } from "./places.js";
 import { REPLAY, replayHours, planDays, coachPlan, coachPlanText, dayKey } from "./plan.js";
 
@@ -94,12 +94,12 @@ async function loadPlace(place) {
   setStatus(t("loading"));
   setBusy(true);
   try {
-    const { hours, tz, tzAbbr, source } = await getForecast(place.lat, place.lon);
+    const { hours, tz, tzAbbr, source, cachedAt } = await getForecastCached(place.lat, place.lon, { storage: (() => { try { return window.localStorage; } catch { return null; } })() });
     const future = hours.slice(currentIndex(hours));
     if (future.length < 6) throw new Error("too few hours");
     state.data = { hours: future, isSample: false, tz, tzAbbr, place, source, fetchedAt: Date.now() };
     $("retryBtn").hidden = true;
-    setStatus("");
+    setStatus(cachedAt ? t("cachedAgo").replace("{n}", Math.max(1, Math.round((Date.now() - cachedAt) / 60000))) : "");
   } catch (e) {
     console.warn(e);
     // Keep the place so "Try again" and the share link still point at it, but show the labelled sample day.
