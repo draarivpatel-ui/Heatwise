@@ -156,3 +156,8 @@ Tests 63 → 66 (`node tests/heat.test.mjs`: force bypass + resave, forced refre
 - Found: the full "Print / save PDF" plan kept the screen's sticky table header, so on page 2+ of the PDF the header row printed on top of data rows and stray headers sat at the bottom of pages. Fixed in the print CSS (header static and repeated per page, rows never split).
 - Checked: the Aug 24, 2023 replay coach sheet says it is a historical replay, not a forecast, in English and Spanish, and stays one Letter page per language (football and roofing); the full plan prints the HISTORICAL REPLAY banner only for the replay.
 - Added tests/browser/coach_print_qa.py and tests/browser/print_plan_qa.py (36 PDFs, 54 checks, all pass); unit tests 68/68.
+
+## Oct 11, 2026 ~7:10 PM ET: offline + rate-limit pass (team-b)
+- Found: with no connection and nothing saved, the error said "Couldn't get the forecast ... Tap Try again in a minute", which is wrong advice when the device is offline; and error lines stayed in the old language after an EN/ES switch.
+- Fixed: new errOffline line (EN/ES) used when navigator.onLine is false; status lines refreshed/errApi/errOffline/errNet/needPlace are re-worded on language switch and keep their error style.
+- Tests: unit 68 -> 70 (offline cache fallback + fail-fast, strings/wiring); new tests/browser/offline_429_qa.py (13 checks); GitHub Actions workflow runs unit + 3 browser suites.
