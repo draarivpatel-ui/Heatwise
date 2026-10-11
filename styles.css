@@ -53,7 +53,7 @@ button.ghost { background: #fff; color: var(--accent); }
 button.ghost:hover { background: #fff7ed; color: var(--accent-dark); }
 button:disabled { opacity: .55; cursor: progress; }
 button.primary { width: 100%; margin-top: 16px; padding: 12px; font-size: 1.05rem; }
-button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible, .table-wrap:focus-visible, #results:focus-visible {
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible, .table-wrap:focus-visible, #results:focus-visible, #status:focus-visible {
   outline: 3px solid #2563eb; outline-offset: 2px;
 }
 #results:focus, #main:focus { outline: none; }
