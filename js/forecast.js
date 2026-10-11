@@ -252,20 +252,23 @@ const cacheKey = (lat, lon) => `heatwise:fc:${lat.toFixed(2)},${lon.toFixed(2)}`
 /**
  * getForecast with a small localStorage-style cache (`storage` has getItem/setItem). A repeat lookup
  * within 30 min reuses the last good answer (no API calls); if the APIs fail (e.g. HTTP 429), an
- * answer up to 3 h old is reused. Result gets cachedAt (epoch ms) when it came from the cache, else null.
+ * answer up to 3 h old is reused. Result gets cachedAt (epoch ms) when it came from the cache, else null,
+ * and cacheFallback = true when the cached answer stands in because the live request failed.
+ * `force: true` ("Refresh now") skips the 30-min reuse and always asks the APIs first; if they fail,
+ * the saved answer (≤ 3 h) still stands in, flagged cacheFallback.
  */
-export async function getForecastCached(lat, lon, { storage = null, now = Date.now(), ...opts } = {}) {
+export async function getForecastCached(lat, lon, { storage = null, now = Date.now(), force = false, ...opts } = {}) {
   const key = cacheKey(lat, lon);
   let hit = null;
   try { const raw = storage?.getItem(key); if (raw) hit = JSON.parse(raw); } catch { hit = null; }
   const age = hit && typeof hit.savedAt === "number" ? now - hit.savedAt : Infinity;
-  if (hit?.data && age >= 0 && age <= CACHE_TTL_MS) return { ...hit.data, cachedAt: hit.savedAt };
+  if (!force && hit?.data && age >= 0 && age <= CACHE_TTL_MS) return { ...hit.data, cachedAt: hit.savedAt, cacheFallback: false };
   try {
     const data = await getForecast(lat, lon, { now, ...opts });
     try { storage?.setItem(key, JSON.stringify({ savedAt: now, data })); } catch { /* quota: ignore */ }
-    return { ...data, cachedAt: null };
+    return { ...data, cachedAt: null, cacheFallback: false };
   } catch (e) {
-    if (hit?.data && age >= 0 && age <= CACHE_STALE_MAX_MS) return { ...hit.data, cachedAt: hit.savedAt };
+    if (hit?.data && age >= 0 && age <= CACHE_STALE_MAX_MS) return { ...hit.data, cachedAt: hit.savedAt, cacheFallback: true };
     throw e;
   }
 }
