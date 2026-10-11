@@ -26,6 +26,10 @@
   </header>
 
   <main class="wrap" id="main" tabindex="-1">
+    <div class="replay-cta">
+      <button type="button" id="replayBtn" class="replay-btn" data-i18n="replayBtn"></button>
+      <p class="small" id="replayHint" data-i18n="replayHint"></p>
+    </div>
     <form id="planForm" class="grid2" autocomplete="off" novalidate>
       <section class="card" aria-labelledby="whereTitle">
         <h2 id="whereTitle" data-i18n="whereTitle"></h2>
@@ -99,6 +103,7 @@
     <section id="results" tabindex="-1" aria-labelledby="resultsTitle" hidden>
       <h2 id="resultsTitle" data-i18n="resultsTitle"></h2>
       <p id="sampleBanner" class="banner" data-i18n="sampleBanner" hidden></p>
+      <p id="replayBanner" class="banner replay" data-i18n="replayBanner" hidden></p>
       <p id="forecastMeta" class="muted small"></p>
       <p id="forecastSource" class="small source-line"></p>
       <p id="printSummary" class="print-only small"></p>
@@ -157,6 +162,24 @@
           <li data-i18n="signsCool"></li>
         </ul>
         <p><strong data-i18n="signsRule"></strong></p>
+      </article>
+
+      <article class="card coach" id="coachCard" aria-labelledby="coachTitle">
+        <h3 id="coachTitle" data-i18n="coachTitle"></h3>
+        <p class="small" data-i18n="coachIntro"></p>
+        <div class="row coach-controls no-print">
+          <div><label for="planDay" data-i18n="planDayLabel"></label><select id="planDay"></select></div>
+          <div><label for="sheetLang" data-i18n="sheetLangLabel"></label><select id="sheetLang">
+            <option value="en" data-i18n="lang_en"></option>
+            <option value="es" data-i18n="lang_es"></option>
+            <option value="both" data-i18n="sheetLangBoth"></option>
+          </select></div>
+        </div>
+        <div class="row no-print">
+          <button type="button" id="coachPrintBtn" data-i18n="coachPrint"></button>
+          <button type="button" id="coachShareBtn" class="ghost" data-i18n="coachShare"></button>
+        </div>
+        <div id="coachSheet" class="coach-sheets"></div>
       </article>
 
       <div class="row actions no-print">
