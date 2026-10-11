@@ -130,3 +130,13 @@ The validation study showed the formulas match the NWS but the Open-Meteo inputs
 | Docs | README (features, replay link, file list, tests), devpost.md (What it does, Try-it-out replay link, video script: replay button at 3:35, Spanish coach plan print at 3:44, end card 3:50–3:56, still under 4:00). |
 | Live | Pushed with `push_repo.sh`; https://aariv.me/Heatwise/ serves files byte-identical to the local copies (index.html, js/app.js, js/plan.js, js/i18n.js, styles.css, README.md, tests). |
 | Still open | Spanish still not native-reviewed (new sheet strings included); the coach plan is one Letter/A4 page for a 15-hour practice range, and a much wider range (e.g. midnight–midnight) can run to a second page. |
+
+## 2026-10-10 (9:30 PM CT): plain-language WBGT line + Spanish degree spacing
+
+| What | Detail |
+|---|---|
+| Gap found | "WBGT" appeared in the plan cards, table and sheet with no definition until "How the math works" far below the fold (EN and ES). A first-time coach or parent would see an unexplained acronym. |
+| Fix | New line `wbgtHelp` right under the source line in every plan (EN + ES): WBGT (wet-bulb globe temperature / temperatura de globo y bulbo húmedo) is the heat-stress number behind Texas UIL flags and OSHA/NIOSH limits; it counts sun, wind and humidity, so it reads higher than air temperature on a sunny day. Wording matches the existing math section. |
+| Spanish polish | "109°F" → "109 °F" in the replay hint and banner (matches the "103 °F" style used elsewhere in ES). The backup-source warning keeps "4°F" because a test pins it to the study's number. |
+| Tests | 54 → **55** passing (new: WBGT line placed after the source line, wired to i18n, defined in EN and ES). |
+| Checks | Code-level only (no Chromium in this sandbox); one plain `<p class="small muted">`, no new interactive elements or colours, so no new axe surface. |
