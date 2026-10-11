@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
-  heatIndexF, wbgtApprox, vaporPressure, limitFor, riskLevel, scoreHours, bestWindow, hourAllowed,
+  heatIndexF, wbgtApprox, vaporPressure, limitFor, riskLevel, scoreHours, bestWindow, hourAllowed, allClear,
   hydrationPlan, acclimatizationSchedule, sampleHours, cToF, fToC, uilFlag, UIL_MAX_HOURS,
   globeTemp, wetBulbTemp, wbgtLiljegren, solarPosition, solarParams, estimateWbgt, localHour, SAMPLE_PLACE,
   UIL_CLASSES, WORKLOADS,
@@ -739,6 +739,17 @@ test("page wiring: on a phone the plan's answer (this hour + safest window) come
   assert.ok(at("replayBanner") < at("nowCard") && at("sampleBanner") < at("nowCard"), "replay/sample labels stay above the answer");
   assert.ok(at("bestCard") < at("forecastSource") && at("bestCard") < at("wbgtHelp"), "answer first");
   assert.ok(app.includes('from "./places.js"') && !app.includes("async function geocode"), "search goes through places.js");
+});
+
+test("all-clear: only when every allowed hour is green/lower risk (EN/ES strings exist)", () => {
+  const mk = (levels) => levels.map((level, i) => ({ t: i * 3600e3, level }));
+  assert.equal(allClear(mk(["green", "green", "low"])), true);
+  assert.equal(allClear(mk(["green", "yellow", "green"])), false);
+  assert.equal(allClear(mk(["green", "red", "green"]), (h, i) => i !== 1), true, "disallowed red hour is ignored");
+  assert.equal(allClear(mk(["green"]), () => false), false, "no allowed hours is not all clear");
+  assert.equal(allClear(mk(["caution"])), false);
+  for (const lang of ["en", "es"]) for (const k of ["allClearUil", "allClearOsha"]) assert.ok(STRINGS[lang][k] && STRINGS[lang][k].length > 20, `${lang}.${k}`);
+  assert.ok(fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8").includes("allClear(scored, allowed)"), "wired into the safest-window card");
 });
 
 for (const [name, fn] of atests) {
