@@ -722,5 +722,11 @@ window.addEventListener("afterprint", () => { reopened.forEach((d) => { d.open =
 readUrl();
 syncGuidelineFields();
 
+// Offline: after one online visit the page opens with no signal (sw.js: network first, cache fallback).
+// The forecast itself still comes from the saved copy in localStorage, labelled with its age. Only over http(s).
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+}
+
 // Exposed for the headless test harness only.
 window.__heatwise = { state, render, profile, loadReplay, coach: () => lastCoach, cacheStatusText };
