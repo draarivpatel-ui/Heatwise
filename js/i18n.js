@@ -60,6 +60,8 @@ export const STRINGS = {
     noWindow: "No window fits your start and finish times in the next 48 hours. Shorten the session or widen the hours.",
     hoursInvalid: "Your earliest start and finish time are the same, so HeatWise is using the whole day.",
     worstHour: "Worst hour in this window",
+    allClearUil: "Every hour in your practice hours over the next 48 hours is green, so any time works.",
+    allClearOsha: "Every hour in your work hours over the next 48 hours is lower risk, so any time works.",
     windowTooLong: (max) => max === 0
       ? "Even the safest window reaches the Black flag: UIL says no outdoor workouts. Move indoors or to another day."
       : `Even the safest window reaches a flag that caps practice at ${max} hour${max === 1 ? "" : "s"}. Shorten practice to ${max} h or less, or move it indoors.`,
@@ -237,6 +239,8 @@ export const STRINGS = {
     noWindow: "Ningún horario cabe entre tu hora de inicio y de fin en las próximas 48 horas. Acorta la sesión o amplía el horario.",
     hoursInvalid: "La hora de inicio y de fin son iguales, así que HeatWise usa el día completo.",
     worstHour: "Peor hora de este horario",
+    allClearUil: "Todas las horas de tu horario de práctica en las próximas 48 horas están en verde, así que cualquier hora sirve.",
+    allClearOsha: "Todas las horas de tu horario de trabajo en las próximas 48 horas son de riesgo menor, así que cualquier hora sirve.",
     windowTooLong: (max) => max === 0
       ? "Incluso el horario más seguro llega a bandera Negra: la UIL indica no entrenar al aire libre. Pásalo bajo techo o a otro día."
       : `Incluso el horario más seguro llega a una bandera que limita la práctica a ${max} hora${max === 1 ? "" : "s"}. Acórtala a ${max} h o menos, o pásala bajo techo.`,
