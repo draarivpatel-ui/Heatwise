@@ -9,6 +9,7 @@ import {
 import { STRINGS, PRESETS } from "./i18n.js";
 import { renderValidation } from "./validation-ui.js";
 import { getForecast } from "./forecast.js";
+import { REPLAY, replayHours, planDays, coachPlan, coachPlanText, dayKey } from "./plan.js";
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -16,6 +17,8 @@ const state = {
   place: null,  // { name, lat, lon }
   data: null,   // { hours, isSample, tz, tzAbbr, place }
   busy: false,
+  urlDay: null,          // plan day from a shared link (?pd=YYYY-MM-DD)
+  sheetLangTouched: false,
 };
 
 const t = (key) => STRINGS[state.lang][key] ?? STRINGS.en[key] ?? key;
@@ -35,6 +38,7 @@ function applyLang() {
   const e = $("earliest").value, l = $("latest").value;
   fillHourSelect($("earliest"), e === "" ? 6 : Number(e), false);
   fillHourSelect($("latest"), l === "" ? 21 : Number(l), true);
+  if (!state.sheetLangTouched) $("sheetLang").value = state.lang;
   renderPlaceLabel();
   if (state.data) render();
   renderValidation(state.lang);
@@ -48,10 +52,10 @@ function fillHourSelect(sel, value, allowMidnight) {
   if (sel.value === "") sel.selectedIndex = 0;
 }
 
-function hourLabel(h) {
-  if (h === 24 || h === 0) return state.lang === "es" ? "medianoche" : "midnight";
-  if (h === 12) return state.lang === "es" ? "mediodía" : "noon";
-  return new Intl.DateTimeFormat(LOCALE(), { hour: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(2026, 0, 1, h)));
+function hourLabel(h, lang = state.lang) {
+  if (h === 24 || h === 0) return lang === "es" ? "medianoche" : "midnight";
+  if (h === 12) return lang === "es" ? "mediodía" : "noon";
+  return new Intl.DateTimeFormat(lang === "es" ? "es-US" : "en-US", { hour: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(2026, 0, 1, h)));
 }
 
 function renderPlaceLabel() {
@@ -135,9 +139,40 @@ function loadSample(clearStatus = true, fallbackFor = null) {
   render(true);
 }
 
+// Historical replay: Houston IAH, Aug 24, 2023 (archived observations; see validation.js / plan.js).
+let replayCache = null;
+async function loadReplay() {
+  setStatus(t("replayLoading"));
+  setBusy(true);
+  try {
+    if (!replayCache) {
+      const res = await fetch(new URL(`../data/validation/${REPLAY.file}`, import.meta.url));
+      if (!res.ok) throw new Error("replay " + res.status);
+      replayCache = await res.json();
+    }
+  } catch (e) {
+    console.warn(e);
+    setStatus(t("errReplay"), true);
+    return;
+  } finally {
+    setBusy(false);
+  }
+  const day = replayCache;
+  state.place = null;
+  state.data = {
+    hours: replayHours(day), isSample: false, isReplay: true, tz: day.tz, tzAbbr: "CDT",
+    place: { ...REPLAY.place, name: day.name }, source: { inputs: "replay" }, fetchedAt: Date.now(),
+  };
+  state.urlDay = state.urlDay || REPLAY.day;
+  $("retryBtn").hidden = true;
+  setStatus("");
+  renderPlaceLabel();
+  render(true);
+}
+
 function setBusy(b) {
   state.busy = b;
-  ["searchBtn", "geoBtn", "sampleBtn", "retryBtn"].forEach((id) => { $(id).disabled = b; });
+  ["searchBtn", "geoBtn", "sampleBtn", "retryBtn", "replayBtn"].forEach((id) => { $(id).disabled = b; });
   document.querySelector("button.primary").disabled = b;
 }
 
@@ -170,9 +205,11 @@ function render(scrollTo = false) {
   const p = profile();
   const uil = p.guideline === "uil";
   const tz = state.data.tz;
+  const replay = !!state.data.isReplay;
   if (state.data.isSample && Date.now() - state.data.fetchedAt > 3600e3) state.data.hours = sampleHours(Date.now());
-  const visible = state.data.hours.slice(currentIndex(state.data.hours)).slice(0, 48);
-  if (!visible.length || visible[0].t + 3600e3 <= Date.now() || (visible.length < 6 && !state.data.isSample)) {
+  // A replay shows its whole archived day; a forecast shows the next 48 hours from now.
+  const visible = replay ? state.data.hours : state.data.hours.slice(currentIndex(state.data.hours)).slice(0, 48);
+  if (!replay && (!visible.length || visible[0].t + 3600e3 <= Date.now() || (visible.length < 6 && !state.data.isSample))) {
     // Every forecast hour has passed (tab left open for days): get a fresh one instead of showing old hours.
     if (state.place && !state.busy) loadPlace(state.place); else loadSample();
     return;
@@ -185,16 +222,19 @@ function render(scrollTo = false) {
 
   $("results").hidden = false;
   $("sampleBanner").hidden = !state.data.isSample;
+  $("replayBanner").hidden = !replay;
+  $("nowTitle").textContent = replay ? t("peakTitle") : t("nowTitle");
+  $("chartTitle").textContent = replay ? t("chartTitleReplay") : t("chartTitle");
   const model = scored.some((h) => h.model === "liljegren") ? t("modelLiljegren") : t("modelBom");
-  const where = state.data.isSample ? "" : `${t("forecastFor")} ${state.data.place.label === "myLocation" ? t("myLocation") : state.data.place.name} · `;
+  const where = state.data.isSample ? "" : replay ? `${state.data.place.name} · ` : `${t("forecastFor")} ${state.data.place.label === "myLocation" ? t("myLocation") : state.data.place.name} · `;
   $("forecastMeta").textContent = `${where}${t("timesIn")}${state.data.tzAbbr ? " (" + state.data.tzAbbr + ")" : ""} · ${model}`;
   renderSource(visible);
   $("uilNote").hidden = !uil;
   $("acclAthlete").hidden = !uil;
   $("printSummary").textContent = printSummaryText(p);
 
-  // This hour
-  const now = scored[0];
+  // This hour (in a replay: the hottest hour of the day)
+  const now = replay ? scored.reduce((a, h) => (h.margin > a.margin ? h : a)) : scored[0];
   setRiskCard("nowCard", now.level);
   $("nowRisk").innerHTML = `${pill(now.level)} <span class="when">${escapeHtml(fmtTime(now.t))}</span>`;
   $("nowStats").innerHTML = statsHtml(now, uil);
@@ -231,6 +271,7 @@ function render(scrollTo = false) {
   $("waterList").innerHTML = items.map((s) => `<li>${escapeHtml(s)}</li>`).join("");
 
   renderAccl();
+  renderCoach();
   syncUrl();
   if (scrollTo) {
     $("results").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
@@ -244,6 +285,7 @@ const advice = (level, uil) => (uil ? t("uil_" + level) : t("adv_" + level));
 /** Which weather source fed this plan (shown under the plan; see forecast.js). */
 function sourceText(data, visible) {
   if (data.isSample) return t("sourceSample");
+  if (data.isReplay) return t("sourceReplay");
   const src = data.source || { inputs: "open-meteo" };
   if (src.inputs === "nws") {
     const n = visible.filter((h) => h.src === "nws").length;
@@ -259,7 +301,7 @@ function renderSource(visible) {
   const d = state.data, el = $("forecastSource");
   const nws = !d.isSample && (d.source?.inputs === "nws" || d.source?.inputs === "nws-only");
   el.className = "small source-line" + (d.source?.reason === "error" || d.source?.reason === "stale" ? " warn" : "");
-  el.dataset.source = d.isSample ? "sample" : d.source?.inputs || "open-meteo";
+  el.dataset.source = d.isSample ? "sample" : d.isReplay ? "replay" : d.source?.inputs || "open-meteo";
   const link = nws
     ? ` · <a href="https://forecast.weather.gov/MapClick.php?lat=${d.place.lat.toFixed(4)}&amp;lon=${d.place.lon.toFixed(4)}" target="_blank" rel="noopener">${escapeHtml(t("nwsLink"))}</a>`
     : "";
@@ -370,7 +412,7 @@ function renderChart() {
   });
   box.innerHTML = s + "</svg>";
   const bestText = best ? `${fmtTime(scored[best.start].t)} – ${fmtTime(scored[best.end].t + 3600e3, false)}` : "";
-  box.setAttribute("aria-label", STRINGS[state.lang].chartAria(`${Math.round(Math.min(...valF))}°F`, `${Math.round(Math.max(...valF))}°F`, bestText));
+  box.setAttribute("aria-label", STRINGS[state.lang][state.data.isReplay ? "chartAriaReplay" : "chartAria"](`${Math.round(Math.min(...valF))}°F`, `${Math.round(Math.max(...valF))}°F`, bestText));
 
   const levels = uil ? ["green", "yellow", "orange", "red", "black"] : ["low", "caution", "high", "extreme"];
   $("legend").innerHTML = levels.map((lv) => `<li><span class="sw" style="background:${SEV_FILL[SEVERITY[lv]]};border-color:${SEV_STROKE[SEVERITY[lv]]}"></span>${escapeHtml(t("level_" + lv))}</li>`).join("")
@@ -380,6 +422,100 @@ function renderChart() {
 let resizeTimer = 0;
 window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (lastScored) renderChart(); }, 150); });
 
+// ---------- one-page coach plan (printable / shareable, English and Spanish) ----------
+let lastCoach = null;
+const sheetLangs = () => ($("sheetLang").value === "both" ? ["en", "es"] : [$("sheetLang").value === "es" ? "es" : "en"]);
+const dfmt = (L, opts) => new Intl.DateTimeFormat(L === "es" ? "es-US" : "en-US", { ...opts, timeZone: state.data.tz || undefined });
+
+/** Formatting + labels for one sheet language (also used for the plain-text share). */
+function sheetCtx(L, forText = false) {
+  const S = STRINGS[L], p = profile();
+  const preset = $("preset").value in S.presets ? $("preset").value : "custom";
+  const replay = !!state.data.isReplay;
+  const guideline = p.guideline === "uil"
+    ? `${S.gl_uil} – ${S["uil_" + p.uilClass]}`
+    : `${S.gl_osha} – ${S["wl_" + p.workload]}; ${p.acclimatized ? S.acclimatized : S.notAcclimatized}; ${S["cl_" + p.clothing]}`;
+  const d = state.data;
+  return {
+    S, L, uil: p.guideline === "uil", replay, duration: p.duration, water: hydrationPlan(p.duration),
+    date: (ms) => dfmt(L, { weekday: "long", year: "numeric", month: "long", day: "numeric" }).format(new Date(ms)),
+    time: (ms) => dfmt(L, { hour: "numeric", minute: "2-digit" }).format(new Date(ms)),
+    hour: (ms) => dfmt(L, { hour: "numeric" }).format(new Date(ms)),
+    place: d.place.label === "myLocation" ? `${S.myLocation} (${d.place.name})` : d.place.name,
+    activity: S.presets[preset], guideline,
+    hours: `${hourLabel(p.earliest, L)} – ${hourLabel(p.latest, L)}`,
+    url: forText ? location.href : "",
+  };
+}
+
+function renderCoach() {
+  if (!lastScored || !state.data) return;
+  const p = profile(), tz = state.data.tz;
+  const days = planDays(lastScored, tz).filter((d) => d.n >= 3 || lastScored.length < 6);
+  const sel = $("planDay");
+  const want = [state.urlDay, sel.value, lastBest ? dayKey(lastScored[lastBest.start].t, tz) : null].find((k) => k && days.some((d) => d.key === k)) || days[0]?.key;
+  const lab = (d) => dfmt(state.lang, { weekday: "short", month: "short", day: "numeric", ...(state.data.isReplay ? { year: "numeric" } : {}) }).format(new Date(d.first));
+  sel.innerHTML = days.map((d) => `<option value="${d.key}">${escapeHtml(lab(d))}</option>`).join("");
+  if (want) sel.value = want;
+  lastCoach = coachPlan(lastScored, { tz, day: sel.value, duration: p.duration, earliest: p.earliest, latest: p.latest });
+  $("coachSheet").innerHTML = sheetLangs().map((L) => sheetHtml(lastCoach, sheetCtx(L))).join("");
+}
+
+function sheetHtml(plan, f) {
+  const S = f.S, e = escapeHtml, wb = (h) => cToF(f.uil ? h.wbgt : h.effWbgt).toFixed(1);
+  const pillL = (lv) => `<span class="pill ${lv}">${e(S["level_" + lv])}</span>`;
+  const rule = (lv) => (f.uil ? S["uil_" + lv] : S["adv_" + lv]);
+  const inWin = (h) => plan.best && h.t >= plan.best.startT && h.t < plan.best.endT;
+  const d = state.data;
+  let win;
+  if (plan.best) {
+    const w = plan.worst;
+    win = `<div class="sh-window sev${SEVERITY[w.level]}"><div>${e(S.sheetWindow)}</div>
+      <div class="sh-big">${e(f.time(plan.best.startT))} – ${e(f.time(plan.best.endT))}</div>
+      <p>${e(S.worstHour)}: ${pillL(w.level)} ${e(f.hour(w.t))} · WBGT ${wb(w)}°F</p>
+      <p>${e(rule(w.level))}</p>
+      ${f.uil && f.duration > w.maxHours ? `<p><strong>${e(S.windowTooLong(w.maxHours))}</strong></p>` : ""}</div>`;
+  } else {
+    win = `<div class="sh-window sev3"><div>${e(S.sheetWindow)}</div><p><strong>${e(S.sheetNoWindow)}</strong></p></div>`;
+  }
+  const strip = plan.rows.map((h) => `<li class="${h.level}${inWin(h) ? " best" : ""}"><b>${e(f.hour(h.t))}</b>${e(S["level_" + h.level])}<br>${wb(h)}°F</li>`).join("");
+  const water = [S.waterLine(f.water), S.waterMax, f.uil ? S.waterUil : S.waterThirst];
+  const src = d.isSample ? S.sourceSample : d.isReplay ? S.sourceReplay : sourceTextFor(S, d);
+  return `<section class="sheet" lang="${f.L}" aria-label="${e(S.sheetTitle)} (${e(S["lang_" + f.L])})">
+    <h4>${e(S.sheetTitle)}: ${e(f.date(plan.rows[0]?.t ?? Date.now()))}</h4>
+    ${f.replay ? `<p class="sh-replay">${e(S.sheetReplayNote)}</p>` : ""}
+    ${d.isSample ? `<p class="sh-replay">${e(S.sampleBanner)}</p>` : ""}
+    <dl><dt>${e(S.sheetPlace)}</dt><dd>${e(f.place)}</dd>
+      <dt>${e(S.sheetActivity)}</dt><dd>${e(f.activity)} · ${f.duration} h</dd>
+      <dt>${e(S.guideline)}</dt><dd>${e(f.guideline)}</dd>
+      <dt>${e(S.sheetHours)}</dt><dd>${e(f.hours)}</dd></dl>
+    ${win}
+    <h5>${e(S.sheetTimeline)}</h5>
+    <ul class="sh-strip">${strip}</ul>
+    ${plan.partial && !f.replay ? `<p class="sh-foot">${e(S.sheetPartial)}</p>` : ""}
+    ${plan.peak ? `<p class="sh-foot">${e(S.sheetPeak)}: ${e(f.hour(plan.peak.t))} · ${e(S["level_" + plan.peak.level])} · WBGT ${wb(plan.peak)}°F · ${e(S.hiLabel)} ${Math.round(plan.peak.heatIndexF)}°F</p>` : ""}
+    <h5>${e(S.sheetRules)}</h5>
+    <ul class="sh-rules">${plan.levels.map((lv) => `<li>${pillL(lv)} ${e(rule(lv))}</li>`).join("")}</ul>
+    <div class="sh-cols"><div>
+      <h5>${e(S.sheetWater)}</h5><ul>${water.map((x) => `<li>${e(x)}</li>`).join("")}</ul>
+      <h5>${e(S.sheetChecklist)}</h5><ul><li>${e(S.sheetCheck1)}</li><li>${e(S.sheetCheck2)}</li><li>${e(S.sheetCheck3)}</li></ul>
+    </div><div>
+      <h5>${e(S.signsTitle)}</h5><ul><li>${e(S.signsStroke)}</li><li>${e(S.signsCool)}</li><li><strong>${e(S.signsRule)}</strong></li></ul>
+    </div></div>
+    <p class="sh-foot">${e(S.sheetMeasure)}<br>${e(src)} · ${e(S.sheetMadeWith)} · aariv.me/Heatwise</p>
+  </section>`;
+}
+
+/** sourceText() for a given language (the sheet may differ from the screen language). */
+function sourceTextFor(S, data) {
+  const src = data.source || { inputs: "open-meteo" };
+  if (src.inputs === "nws") return S.sourceNws;
+  if (src.inputs === "nws-only") return S.sourceNwsOnly;
+  if (src.reason === "outside") return S.sourceOmOutside;
+  if (src.reason === "error" || src.reason === "stale") return S.sourceOmError;
+  return S.sourceOm;
+}
+
 // ---------- URL sharing ----------
 function syncUrl() {
   const p = profile();
@@ -387,8 +523,11 @@ function syncUrl() {
     lang: state.lang, preset: $("preset").value, g: p.guideline, uc: p.uilClass, wl: p.workload,
     acc: p.acclimatized ? 1 : 0, cl: p.clothing, dur: p.duration, e: p.earliest, l: p.latest,
   });
-  if (state.data?.isSample && !state.data?.fallbackFor) q.set("sample", "1");
+  if (state.data?.isReplay) q.set("replay", "iah2023");
+  else if (state.data?.isSample && !state.data?.fallbackFor) q.set("sample", "1");
   else if (state.place) { q.set("lat", state.place.lat); q.set("lon", state.place.lon); q.set("name", state.place.name); }
+  if ($("planDay").value) q.set("pd", $("planDay").value);
+  if (state.sheetLangTouched) q.set("sl", $("sheetLang").value);
   history.replaceState(null, "", `${location.pathname}?${q}`);
 }
 
@@ -396,6 +535,8 @@ function setIfValid(id, value, valid) { if (value != null && valid(value)) $(id)
 
 function readUrl() {
   const q = new URLSearchParams(location.search);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(q.get("pd") || "")) state.urlDay = q.get("pd");
+  if (["en", "es", "both"].includes(q.get("sl"))) { $("sheetLang").value = q.get("sl"); state.sheetLangTouched = true; }
   if (q.get("lang") in STRINGS) state.lang = q.get("lang");
   else if (!q.has("lang") && (navigator.language || "").toLowerCase().startsWith("es")) state.lang = "es";
   applyLang();
@@ -415,7 +556,8 @@ function readUrl() {
     || (pr.guideline === "osha" && $("workload").value !== pr.workload))) $("preset").value = "custom";
   syncGuidelineFields();
   const lat = Number(q.get("lat")), lon = Number(q.get("lon"));
-  if (q.get("sample") === "1") loadSample();
+  if (q.get("replay")) loadReplay();
+  else if (q.get("sample") === "1") loadSample();
   else if (q.has("lat") && Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
     loadPlace({ lat, lon, name: (q.get("name") || `${lat.toFixed(2)}, ${lon.toFixed(2)}`).slice(0, 80) });
   }
@@ -491,12 +633,34 @@ $("geoBtn").addEventListener("click", () => {
     { timeout: 10000, maximumAge: 600000 },
   );
 });
-$("sampleBtn").addEventListener("click", () => { state.place = null; loadSample(); });
+$("sampleBtn").addEventListener("click", () => { state.place = null; state.urlDay = null; loadSample(); });
+$("replayBtn").addEventListener("click", () => { state.urlDay = REPLAY.day; loadReplay(); });
+$("planDay").addEventListener("change", () => { state.urlDay = $("planDay").value; renderCoach(); syncUrl(); });
+$("sheetLang").addEventListener("change", () => { state.sheetLangTouched = true; renderCoach(); syncUrl(); });
+$("coachPrintBtn").addEventListener("click", () => {
+  document.body.classList.add("print-coach");
+  window.print();
+  setTimeout(() => document.body.classList.remove("print-coach"), 0);
+});
+window.addEventListener("afterprint", () => document.body.classList.remove("print-coach"));
+$("coachShareBtn").addEventListener("click", async () => {
+  if (!lastCoach) return;
+  const text = sheetLangs().map((L) => coachPlanText(lastCoach, STRINGS[L], sheetCtx(L, true))).join("\n\n— — —\n\n");
+  const title = sheetLangs().map((L) => STRINGS[L].sheetTitle).join(" / ");
+  try {
+    if (navigator.share && matchMedia("(pointer: coarse)").matches) { await navigator.share({ title, text }); return; }
+    await navigator.clipboard.writeText(text);
+    setStatus(t("coachCopied"));
+  } catch (e) {
+    if (e && e.name === "AbortError") return;
+    window.prompt(t("copyPrompt"), text);
+  }
+});
 $("retryBtn").addEventListener("click", () => { if (state.place) loadPlace(state.place); });
 // A plan left open in a tab goes stale: refetch when the user comes back after an hour or more.
 document.addEventListener("visibilitychange", () => {
   const d = state.data;
-  if (document.visibilityState !== "visible" || !d || state.busy) return;
+  if (document.visibilityState !== "visible" || !d || state.busy || d.isReplay) return;
   if (Date.now() - d.fetchedAt < 3600e3) return;
   if (!d.isSample && state.place) loadPlace(state.place);
   else render();
@@ -523,7 +687,7 @@ $("shareBtn").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(location.href); setStatus(t("copied")); }
   catch { window.prompt(t("copyPrompt"), location.href); }
 });
-$("printBtn").addEventListener("click", () => window.print());
+$("printBtn").addEventListener("click", () => { document.body.classList.remove("print-coach"); window.print(); });
 // Print the hour-by-hour table too: open closed <details> for printing, then restore.
 let reopened = [];
 window.addEventListener("beforeprint", () => { reopened = [...document.querySelectorAll("details:not([open])")]; reopened.forEach((d) => { d.open = true; }); });
@@ -534,4 +698,4 @@ readUrl();
 syncGuidelineFields();
 
 // Exposed for the headless test harness only.
-window.__heatwise = { state, render, profile };
+window.__heatwise = { state, render, profile, loadReplay, coach: () => lastCoach };
