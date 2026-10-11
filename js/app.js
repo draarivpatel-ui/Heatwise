@@ -1,4 +1,5 @@
-// HeatWise UI: fetches a free forecast (Open-Meteo, no API key), scores each hour with heat.js,
+// HeatWise UI: fetches a free forecast (NWS grid + Open-Meteo for U.S. places, Open-Meteo elsewhere;
+// see forecast.js; no API keys), scores each hour with heat.js,
 // and renders the plan. No build step, no tracking; nothing leaves the browser except the
 // forecast and place-search requests.
 import {
@@ -7,6 +8,7 @@ import {
 } from "./heat.js";
 import { STRINGS, PRESETS } from "./i18n.js";
 import { renderValidation } from "./validation-ui.js";
+import { getForecast } from "./forecast.js";
 
 const $ = (id) => document.getElementById(id);
 const state = {
@@ -95,31 +97,6 @@ async function geocode(query) {
 const US_STATES = { Texas: "tx", Louisiana: "la", Oklahoma: "ok", "New Mexico": "nm", Arizona: "az", California: "ca", Florida: "fl", Georgia: "ga", Alabama: "al", Mississippi: "ms", Arkansas: "ar" };
 const stateAbbr = (admin1) => US_STATES[admin1] || null;
 
-async function fetchForecast(lat, lon) {
-  const params = new URLSearchParams({
-    latitude: lat, longitude: lon,
-    hourly: "temperature_2m,relative_humidity_2m,shortwave_radiation,wind_speed_10m,surface_pressure,is_day",
-    wind_speed_unit: "ms",
-    forecast_days: "3",
-    timezone: "auto",
-    timeformat: "unixtime",
-  });
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-  const j = await res.json().catch(() => ({}));
-  if (!res.ok || j.error) throw new Error(j.reason || "forecast " + res.status);
-  const H = j.hourly;
-  const hours = H.time.map((sec, i) => ({
-    t: sec * 1000,
-    tempC: H.temperature_2m[i],
-    rh: H.relative_humidity_2m[i],
-    radiation: H.shortwave_radiation?.[i] ?? undefined,
-    wind10: H.wind_speed_10m?.[i] ?? undefined,
-    pressure: H.surface_pressure?.[i] ?? undefined,
-    isDay: H.is_day?.[i],
-  })).filter((h) => Number.isFinite(h.tempC) && Number.isFinite(h.rh));
-  return { hours, tz: j.timezone, tzAbbr: j.timezone_abbreviation };
-}
-
 /** Index of the hour containing "now" (or the first future hour). */
 function currentIndex(hours, now = Date.now()) {
   const i = hours.findIndex((h) => now < h.t + 3600e3);
@@ -132,10 +109,10 @@ async function loadPlace(place) {
   setStatus(t("loading"));
   setBusy(true);
   try {
-    const { hours, tz, tzAbbr } = await fetchForecast(place.lat, place.lon);
+    const { hours, tz, tzAbbr, source } = await getForecast(place.lat, place.lon);
     const future = hours.slice(currentIndex(hours));
     if (future.length < 6) throw new Error("too few hours");
-    state.data = { hours: future, isSample: false, tz, tzAbbr, place, fetchedAt: Date.now() };
+    state.data = { hours: future, isSample: false, tz, tzAbbr, place, source, fetchedAt: Date.now() };
     $("retryBtn").hidden = true;
     setStatus("");
   } catch (e) {
@@ -210,7 +187,8 @@ function render(scrollTo = false) {
   $("sampleBanner").hidden = !state.data.isSample;
   const model = scored.some((h) => h.model === "liljegren") ? t("modelLiljegren") : t("modelBom");
   const where = state.data.isSample ? "" : `${t("forecastFor")} ${state.data.place.label === "myLocation" ? t("myLocation") : state.data.place.name} · `;
-  $("forecastMeta").textContent = `${where}${t("timesIn")}${state.data.tzAbbr ? " (" + state.data.tzAbbr + ")" : ""} · ${model} · ${t("source")}`;
+  $("forecastMeta").textContent = `${where}${t("timesIn")}${state.data.tzAbbr ? " (" + state.data.tzAbbr + ")" : ""} · ${model}`;
+  renderSource(visible);
   $("uilNote").hidden = !uil;
   $("acclAthlete").hidden = !uil;
   $("printSummary").textContent = printSummaryText(p);
@@ -262,6 +240,31 @@ function render(scrollTo = false) {
 
 const pill = (level) => `<span class="pill ${level}">${escapeHtml(t("level_" + level))}</span>`;
 const advice = (level, uil) => (uil ? t("uil_" + level) : t("adv_" + level));
+
+/** Which weather source fed this plan (shown under the plan; see forecast.js). */
+function sourceText(data, visible) {
+  if (data.isSample) return t("sourceSample");
+  const src = data.source || { inputs: "open-meteo" };
+  if (src.inputs === "nws") {
+    const n = visible.filter((h) => h.src === "nws").length;
+    return n < visible.length ? `${t("sourceNws")}. ${t("sourceNwsPartial")(n, visible.length)}` : t("sourceNws");
+  }
+  if (src.inputs === "nws-only") return t("sourceNwsOnly");
+  if (src.reason === "outside") return t("sourceOmOutside");
+  if (src.reason === "error" || src.reason === "stale") return t("sourceOmError");
+  return t("sourceOm");
+}
+
+function renderSource(visible) {
+  const d = state.data, el = $("forecastSource");
+  const nws = !d.isSample && (d.source?.inputs === "nws" || d.source?.inputs === "nws-only");
+  el.className = "small source-line" + (d.source?.reason === "error" || d.source?.reason === "stale" ? " warn" : "");
+  el.dataset.source = d.isSample ? "sample" : d.source?.inputs || "open-meteo";
+  const link = nws
+    ? ` · <a href="https://forecast.weather.gov/MapClick.php?lat=${d.place.lat.toFixed(4)}&amp;lon=${d.place.lon.toFixed(4)}" target="_blank" rel="noopener">${escapeHtml(t("nwsLink"))}</a>`
+    : "";
+  el.innerHTML = escapeHtml(sourceText(d, visible)) + link;
+}
 
 function printSummaryText(p) {
   const pr = $("preset");
