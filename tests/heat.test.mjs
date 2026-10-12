@@ -887,6 +887,21 @@ test("all-clear: only when every allowed hour is green/lower risk (EN/ES strings
     assert.ok(m, "REWORD_KEYS list"); for (const k of ["refreshed", "errApi", "errOffline", "errNet", "needPlace"]) assert.ok(m[1].includes(`"${k}"`), k);
     for (const k of ["refreshed", "errApi", "errOffline", "errNet", "needPlace"]) assert.ok(STRINGS.en[k] && STRINGS.es[k] && STRINGS.en[k] !== STRINGS.es[k], k + " EN/ES");
   });
+  test("language switch mid-flow: every one-line status the app can show (setStatus(t(...))) is re-worded, and acclimatization minutes are kept in 10-720", () => {
+    const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+    const listed = app.match(/const REWORD_KEYS = \[([^\]]+)\]/)[1];
+    const keys = new Set();
+    for (const m of app.matchAll(/setStatus\(t\(([^)]*)\)/g)) for (const k of m[1].matchAll(/"([A-Za-z]+)"/g)) keys.add(k[1]);
+    assert.ok(keys.size >= 14, "found the status keys: " + [...keys]);
+    keys.delete("pickPlace"); // has a count in it; re-worded by its own line in the switch handler
+    assert.ok(app.includes('setStatus(t("pickPlace").replace("{n}", n))'), "picker line re-worded with its count");
+    for (const k of keys) {
+      assert.ok(listed.includes(`"${k}"`), `status "${k}" is re-worded on EN/ES switch`);
+      assert.ok(STRINGS.en[k] && STRINGS.es[k], k + " has EN and ES");
+    }
+    assert.ok(app.includes('$("acclUsual").addEventListener("change"'), "acclimatization box shows the minutes actually used");
+    assert.match(app, /Math\.min\(720, Math\.max\(10, n\)\)/);
+  });
   atest("service worker: caches every file the page loads + the replay data, network first, own caches only, http(s) only", async () => {
     const vm = await import("node:vm");
     const src = fs.readFileSync(new URL("../sw.js", import.meta.url), "utf8");

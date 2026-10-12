@@ -332,8 +332,13 @@ function printSummaryText(p) {
   return parts.join(" · ");
 }
 
+// Usual session length the schedule uses: kept inside 10–720 min; a blank or unreadable box means the 120-min default.
+function acclMinutes() {
+  const raw = $("acclUsual").value.trim(), n = Math.round(Number(raw));
+  return raw === "" || !Number.isFinite(n) ? 120 : Math.min(720, Math.max(10, n));
+}
 function renderAccl() {
-  const usual = Math.min(720, Math.max(10, Number($("acclUsual").value) || 120));
+  const usual = acclMinutes();
   const sched = acclimatizationSchedule(usual, $("acclNew").checked);
   $("acclList").innerHTML = sched.map((d) => `<li>${t("acclDay")} ${d.day}: ${d.pct}% → ${d.minutes} ${t("acclMax")}</li>`).join("");
 }
@@ -691,6 +696,8 @@ $("guideline").addEventListener("change", () => { syncGuidelineFields(); $("pres
   render();
 }));
 ["acclUsual", "acclNew"].forEach((id) => $(id).addEventListener("input", renderAccl));
+// When the field is left, show the number the schedule actually used (5000 -> 720, 5 -> 10, blank -> 120), like the session-length box.
+$("acclUsual").addEventListener("change", () => { $("acclUsual").value = String(acclMinutes()); renderAccl(); });
 $("planForm").addEventListener("submit", (e) => {
   e.preventDefault();
   if (state.busy) return;
@@ -698,7 +705,8 @@ $("planForm").addEventListener("submit", (e) => {
   if ($("place").value.trim()) doSearch();
   else { setStatus(t("needPlace"), true); $("place").focus(); }
 });
-const REWORD_KEYS = ["refreshed", "errApi", "errOffline", "errNet", "needPlace"];
+const REWORD_KEYS = ["refreshed", "errApi", "errOffline", "errNet", "needPlace", "errGeo", "errLocation", "errLocationOff", "errReplay",
+  "copied", "coachCopied", "searching", "locating", "loading", "refreshing", "replayLoading"];
 document.querySelectorAll("[data-lang]").forEach((b) => b.addEventListener("click", () => {
   state.lang = b.dataset.lang; fmtCache.clear(); applyLang(); if (state.data) syncUrl();
   if (state.data?.cachedAt && !$("refreshBtn").hidden) showCacheStatus();
