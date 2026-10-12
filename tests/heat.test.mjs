@@ -769,6 +769,15 @@ test("shared-link table: ?lang/?preset/?wl/?cl accept only the app's own keys (n
   assert.doesNotMatch(app, /\bin (STRINGS|PRESETS|WORKLOADS|CLOTHING)\b/);
 });
 
+test("every outside link on the page and in the guidance strings is https (no insecure http:// source links)", () => {
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]).filter((u) => /^[a-z]+:/i.test(u) && !u.startsWith("data:"));
+  assert.ok(hrefs.length >= 5, "source links found");
+  for (const u of hrefs) assert.match(u, /^(https:|mailto:|tel:)/, u);
+  const strings = JSON.stringify(STRINGS);
+  assert.doesNotMatch(strings, /http:\/\/(?!www\.w3\.org)/);
+});
+
 test("place search: state-hint table on real Open-Meteo answers (a longer state name never also matches the shorter one inside it)", () => {
   const FX = JSON.parse(fs.readFileSync(new URL("./fixtures/geocode-state-hints-2026-10-11.json", import.meta.url), "utf8"));
   const run = (q) => { const { main, hint } = parseQuery(q); return autoPick(rankPlaces(FX[main], hint)); };

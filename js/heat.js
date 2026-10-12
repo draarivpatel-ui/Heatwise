@@ -56,7 +56,7 @@ export const fToC = (f) => ((f - 32) * 5) / 9;
 /**
  * Water vapour pressure in hPa from air temp (°C) and relative humidity (%).
  * Source: Australian Bureau of Meteorology, Thermal Comfort observations.
- * http://www.bom.gov.au/info/thermal_stress/
+ * https://www.bom.gov.au/info/thermal_stress/
  */
 export function vaporPressure(tC, rh) {
   return (rh / 100) * 6.105 * Math.exp((17.27 * tC) / (237.7 + tC));
