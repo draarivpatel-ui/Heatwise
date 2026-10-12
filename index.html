@@ -7,6 +7,10 @@
   <meta name="description" content="HeatWise turns a free weather forecast into an hour-by-hour heat-safety plan for student athletes, marching band, coaches and outdoor workers, using Texas UIL WBGT flags and OSHA/NIOSH heat-stress limits." />
   <meta name="theme-color" content="#7c2d12" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%A1%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <script>/* Spanish visitors: keep the English HTML from flashing before js/app.js swaps in Spanish (styles.css reveals after 3 s regardless). Mirrors readUrl() in js/app.js. */
+  (function () { try { var q = new URLSearchParams(location.search), l = q.get("lang");
+    var es = q.has("lang") ? l === "es" : (navigator.language || "").toLowerCase().indexOf("es") === 0;
+    if (es) { document.documentElement.lang = "es"; document.documentElement.classList.add("i18n-wait"); } } catch (e) {} })();</script>
   <link rel="stylesheet" href="styles.css" />
   <link rel="modulepreload" href="js/app.js" />
   <link rel="modulepreload" href="js/i18n.js" />

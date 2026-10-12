@@ -29,6 +29,7 @@ const LOCALE = () => (state.lang === "es" ? "es-US" : "en-US");
 // ---------- i18n ----------
 function applyLang() {
   document.documentElement.lang = state.lang;
+  document.documentElement.classList.remove("i18n-wait"); // set by the inline script in index.html for Spanish visitors
   document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
   document.querySelectorAll("[data-lang]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === state.lang)));

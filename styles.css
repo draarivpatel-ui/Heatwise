@@ -216,3 +216,7 @@ figcaption { font-weight: 600; font-size: .92rem; margin-bottom: 6px; }
   .sh-strip li, .sh-window, .sh-replay { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   @page { margin: 11mm; }
 }
+
+/* Spanish visitors: hidden until js/app.js has applied the Spanish strings (no flash of English); always shown after 3 s. */
+html.i18n-wait body { visibility: hidden; animation: i18n-reveal 0s linear 3s forwards; }
+@keyframes i18n-reveal { to { visibility: visible; } }
