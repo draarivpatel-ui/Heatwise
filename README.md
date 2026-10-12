@@ -4,9 +4,9 @@
 
 **Plan outdoor practice and work around the heat, hour by hour.**
 
-![HeatWise home screen: the record-day replay button, the "Where" search and the activity, guideline and time pickers](docs/hero.png)
+![HeatWise heat plan for Houston's record day (Aug 24, 2023, historical replay): hottest hour 5 PM at the black flag, WBGT 94.4 °F in the sun; safest window 6 AM to 8 AM, green](docs/hero.png)
 
-*Screenshot of the live site (Oct 2026), taken with headless Chromium.*
+*The finished plan from the one-click [record-day replay](https://aariv.me/Heatwise/?replay=iah2023) (a historical replay, not a forecast). Real screenshot of the app at 1280 px, taken with headless Chromium on Oct 11, 2026.*
 
 ## Features
 

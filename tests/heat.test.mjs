@@ -791,6 +791,28 @@ test("link preview: Open Graph + large Twitter card point at the live page and a
   assert.ok(png.length < 300e3, "small enough for chat previews");
 });
 
+test("link preview + README hero show the finished record-day plan, and every number in their captions is re-computed from the replay", () => {
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const readme = fs.readFileSync(new URL("../README.md", import.meta.url), "utf8");
+  const alt = (html.match(/<meta property="og:image:alt" content="([^"]+)"/) || [])[1].replace(/&#39;/g, "'");
+  const top = readme.slice(0, readme.indexOf("\n## "));
+  const m = top.match(/!\[([^\]]+)\]\(docs\/hero\.png\)/);
+  assert.ok(m, "README opens with docs/hero.png before its first section");
+  assert.match(top, /historical replay, not a forecast/i, "README caption labels the replay");
+  const rp = replayDay(DAY);
+  const peak = rp.rows.reduce((a, r) => (r.wbgtF > a.wbgtF ? r : a));
+  const hr12 = (h) => `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`;
+  for (const cap of [alt, m[1]]) {
+    assert.match(cap, /historical replay/, "labelled as a replay, not a forecast");
+    assert.ok(cap.includes("Aug 24, 2023"), cap);
+    assert.ok(cap.includes(`hottest hour ${hr12(peak.hour)} at the ${peak.flag} flag`), cap);
+    assert.ok(cap.includes(`WBGT ${peak.wbgtF.toFixed(1)} °F`), cap);
+    assert.ok(cap.includes(`safest window ${hr12(rp.rows[rp.best.start].hour)} to ${hr12(rp.rows[rp.best.end].hour + 1)}, green`), cap);
+  }
+  assert.ok(rp.bestRows.every((r) => r.flag === "green"));
+  assert.equal(peak.hour, 17); assert.equal(peak.flag, "black");
+});
+
 test("place search: state-hint table on real Open-Meteo answers (a longer state name never also matches the shorter one inside it)", () => {
   const FX = JSON.parse(fs.readFileSync(new URL("./fixtures/geocode-state-hints-2026-10-11.json", import.meta.url), "utf8"));
   const run = (q) => { const { main, hint } = parseQuery(q); return autoPick(rankPlaces(FX[main], hint)); };
