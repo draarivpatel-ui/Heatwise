@@ -166,3 +166,7 @@ Tests 63 → 66 (`node tests/heat.test.mjs`: force bypass + resave, forced refre
 - Gap: HeatWise already saved the last forecast per place, but with no service worker the page itself could not load offline, so the saved forecast was useless at a field with no signal.
 - Added sw.js (network first, cache fallback, weather APIs never cached, only heatwise-* caches pruned, registered only over http(s)); replay data precached.
 - Tests: unit 70 -> 71 (service worker); offline_429_qa.py 13 -> 16 (offline reload of a shared link shows the saved, labelled forecast; replay loads offline).
+
+## Oct 12, 2026 ~5:00 PM ET: NIOSH + JAMA numbers re-read (docs check, no change)
+- JAMA (Howard et al. 2024;332(14):1203-1204, opened via web_fetch; curl gets 403): Table still 1,069 deaths in 1999 and 2,325 in 2023, 2023 the highest of 1999-2023. README/devpost.md match.
+- CDC/NIOSH Workplace Recommendations (page dated Jul 16, 2026): 1 cup (8 oz) every 15-20 min for moderate activity under 2 h; generally no more than 6 cups (48 oz) per hour; sports drinks when sweating lasts several hours; new workers <=20% on day 1, +20%/day; experienced 50/60/80/100% days 1-4. js/heat.js, i18n strings, README and devpost.md match. No wording change needed.
