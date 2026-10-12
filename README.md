@@ -1,12 +1,12 @@
-# HeatWise 🌡️
+# HeatWise
 
 **Live:** https://aariv.me/Heatwise/ · **Record-day replay:** https://aariv.me/Heatwise/?replay=iah2023 · **Demo day (synthetic, labelled):** https://aariv.me/Heatwise/?sample=1
 
-**Plan outdoor practice and work around the heat, hour by hour.**
+HeatWise is a free web app that helps coaches, band directors, athletes and outdoor workers plan around the heat, hour by hour.
 
 ![HeatWise heat plan for Houston's record day (Aug 24, 2023, historical replay): hottest hour 5 PM at the black flag, WBGT 94.4 °F in the sun; safest window 6 AM to 8 AM, green](docs/hero.png)
 
-*The finished plan from the one-click [record-day replay](https://aariv.me/Heatwise/?replay=iah2023) (a historical replay, not a forecast). Real screenshot of the app at 1280 px, taken with headless Chromium on Oct 11, 2026.*
+*The finished plan from the one-click [record-day replay](https://aariv.me/Heatwise/?replay=iah2023) (a historical replay, not a forecast). Real screenshot of the app at 1280 px, taken with headless Chromium on Oct 12, 2026.*
 
 ## Features
 
@@ -21,7 +21,7 @@ HeatWise turns a free weather forecast into a personal heat-safety plan for stud
 - **Shareable link and printable plan**, so a coach can send the whole team the same plan
 - **Works with no signal** after one online visit: a small service worker (`sw.js`) keeps the app's own files, and the last forecast for each place (saved in the browser, up to 3 hours old, always labelled with its age) still shows at a field or job site with no connection
 - **One-page coach plan** for any day in the plan: the safest practice window, an hour-by-hour flag strip, the rules for each flag that day, water, a before-practice checklist and first aid. Print it (or save as PDF) in **English, Spanish, or both** (one page per language), or share it as plain text for a team chat
-- **One-click replay of Houston's record day** ("▶ Replay Houston's record day (Aug 24, 2023)" at the top of the page): runs the archived IAH weather from the day Houston hit 109°F through the normal plan view, clearly labelled as a historical replay, so judges and coaches can see what HeatWise does on a dangerous day even when today's forecast is mild
+- **One-click replay of Houston's record day** ("Replay Houston's record day (Aug 24, 2023)" at the top of the page): runs the archived IAH weather from the day Houston hit 109°F through the normal plan view, clearly labelled as a historical replay, so judges and coaches can see what HeatWise does on a dangerous day even when today's forecast is mild
 
 Built for **EurekaDev 2026**, Coding Track, Problem in the Community.
 

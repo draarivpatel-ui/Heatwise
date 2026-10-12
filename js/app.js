@@ -62,7 +62,7 @@ function hourLabel(h, lang = state.lang) {
 
 function renderPlaceLabel() {
   const p = state.data?.isSample && !state.data?.fallbackFor ? null : state.place;
-  $("placeLabel").textContent = p ? `📍 ${p.label === "myLocation" ? t("myLocation") + " (" + p.name + ")" : p.name}` : "";
+  $("placeLabel").textContent = p ? `${p.label === "myLocation" ? t("myLocation") + " (" + p.name + ")" : p.name}` : "";
 }
 
 // ---------- time formatting (in the forecast place's own time zone, DST-aware) ----------
