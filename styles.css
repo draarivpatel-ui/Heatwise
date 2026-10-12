@@ -214,6 +214,8 @@ figcaption { font-weight: 600; font-size: .92rem; margin-bottom: 6px; }
   body:not(.print-coach) #coachCard { display: none !important; }
   .replay-cta { display: none !important; }
   .sh-strip li, .sh-window, .sh-replay { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.print-coach .sheet h5 { break-after: avoid; }
+  body.print-coach .sheet .sh-strip li, body.print-coach .sheet .sh-window, body.print-coach .sheet .sh-rules li, body.print-coach .sheet dl { break-inside: avoid; }
   @page { margin: 11mm; }
 }
 
