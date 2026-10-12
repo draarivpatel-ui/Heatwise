@@ -43,6 +43,56 @@ test("NWS heat index matches published chart values", () => {
   near(heatIndexF(80, 40), 80, 1.5, "80F/40%");
 });
 
+// Primary-source audit (team-b r6, Oct 11 2026): the whole NWS chart, the NWS pages' own worked examples,
+// and the OSHA/NIOSH and UIL tables exactly as published.
+test("NWS heat index: all 135 cells of the NWS chart (weather.gov/tsa/heatindex) + 4 NWS worked examples", () => {
+  const F = JSON.parse(fs.readFileSync(new URL("./fixtures/nws-heat-index-chart.json", import.meta.url), "utf8"));
+  assert.equal(F.cells_T_RH_HI.length, 135);
+  let exact = 0;
+  for (const [T, RH, HI] of F.cells_T_RH_HI) {
+    const d = Math.round(heatIndexF(T, RH)) - HI;
+    if (d === 0) exact++;
+    // The chart is Steadman's table; the NWS regression + its own >85 % RH adjustment (80-87 °F) runs up to ~2 °F
+    // above it in the humid corner. Everywhere else the regression lands within 1 °F of the chart.
+    const humidCorner = RH > 85 && T <= 87;
+    assert.ok(Math.abs(d) <= (humidCorner ? 2 : 1), `${T} °F / ${RH} %: ${heatIndexF(T, RH).toFixed(2)} vs chart ${HI}`);
+  }
+  assert.ok(exact >= 126, `rounded value equals the chart in ${exact}/135 cells`);
+  for (const e of F.examples) assert.equal(Math.round(heatIndexF(e.T, e.RH)), e.HI, `${e.T} °F / ${e.RH} % -> ${e.HI} (${e.source})`);
+});
+
+test("NWS heat index: Rothfusz coefficients, both NWS adjustments and the simple-formula switch exactly as on the WPC page", () => {
+  const roth = (T, R) => -42.379 + 2.04901523 * T + 10.14333127 * R - 0.22475541 * T * R - 0.00683783 * T * T - 0.05481717 * R * R + 0.00122874 * T * T * R + 0.00085282 * T * R * R - 0.00000199 * T * T * R * R;
+  near(heatIndexF(95, 50), roth(95, 50), 1e-9, "plain regression");
+  near(heatIndexF(100, 10), roth(100, 10) - ((13 - 10) / 4) * Math.sqrt((17 - 5) / 17), 1e-9, "RH < 13 % adjustment subtracted");
+  near(heatIndexF(84, 95), roth(84, 95) + ((95 - 85) / 10) * ((87 - 84) / 5), 1e-9, "RH > 85 % adjustment added");
+  near(heatIndexF(113, 10), roth(113, 10), 1e-9, "no dry adjustment above 112 °F");
+  near(heatIndexF(88, 95), roth(88, 95), 1e-9, "no humid adjustment above 87 °F");
+  const simple = (T, R) => (0.5 * (T + 61 + (T - 68) * 1.2 + R * 0.094) + T) / 2;
+  near(heatIndexF(75, 50), simple(75, 50), 1e-9, "below 80 °F the averaged simple formula is used");
+  assert.ok(simple(75, 50) < 80);
+});
+
+test("OSHA Table 2 (NIOSH 2016) limits, clothing factors and the BoM formula match the published pages exactly", () => {
+  // https://www.osha.gov/heat-exposure/hazards, re-read Oct 11 2026
+  assert.deepEqual(WORKLOADS, { light: { unacclimatized: 28, acclimatized: 30 }, moderate: { unacclimatized: 25, acclimatized: 28 },
+    heavy: { unacclimatized: 23, acclimatized: 26 }, veryHeavy: { unacclimatized: 21, acclimatized: 25 } });
+  assert.deepEqual(CLOTHING, { work: 0, cloth: 0, sms: 0.5, polyolefin: 1, double: 3, vapor: 11 });
+  // https://www.bom.gov.au/info/thermal_stress/: WBGT = 0.567 Ta + 0.393 e + 3.94, e = rh/100 * 6.105 exp(17.27 Ta / (237.7 + Ta))
+  const e = (35 / 100) * 6.105 * Math.exp((17.27 * 33) / (237.7 + 33));
+  near(wbgtApprox(33, 35), 0.567 * 33 + 0.393 * e + 3.94, 1e-12, "BoM formula");
+  // BoM / ISO 7243 outdoor weighting: WBGT = 0.7 Tnwb + 0.2 Tg + 0.1 Ta
+  const w = wbgtLiljegren({ tempC: 33, rh: 50, pressure: 1010, wind10: 3, solar: 800, cza: 0.8 });
+  near(w.wbgt, 0.7 * w.tnwb + 0.2 * w.tg + 0.1 * 33, 1e-12, "outdoor WBGT weights");
+});
+
+test("UIL WBGT activity table (25-26 Heat Plan / 26-27 Required Plan): every published edge lands in the right flag, Class 3 and Class 2", () => {
+  const T = { 3: [[81.9, "green"], [82.0, "yellow"], [86.9, "yellow"], [87.0, "orange"], [90.0, "orange"], [90.1, "red"], [92.0, "red"], [92.1, "black"]],
+              2: [[79.6, "green"], [79.7, "yellow"], [84.6, "yellow"], [84.7, "orange"], [87.6, "orange"], [87.7, "red"], [89.7, "red"], [89.8, "black"]] };
+  for (const cls of [3, 2]) for (const [f, flag] of T[cls]) assert.equal(uilFlag(fToC(f), cls), flag, `Class ${cls} ${f} °F`);
+  assert.deepEqual(UIL_MAX_HOURS, { green: Infinity, yellow: Infinity, orange: 2, red: 1, black: 0 });
+});
+
 // BoM worked example: Brisbane January, 29.4°C and 59% RH -> WBGT about 30°C.
 test("simple (BoM) WBGT matches BoM worked example", () => {
   near(wbgtApprox(29.4, 59), 30, 0.5, "Brisbane example");
