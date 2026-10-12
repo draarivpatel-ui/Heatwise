@@ -36,8 +36,18 @@ with sync_playwright() as p:
     pg.wait_for_selector("#results:not([hidden])", timeout=8000); pg.wait_for_timeout(600)
     days = pg.eval_on_selector_all("#planDay option", "els=>els.map(e=>[e.value,e.textContent])")
     print("days", days)
-    for preset in ["football", "roofing"]:
+    # football / roofing with their own hours, then midnight-to-midnight (earliest 0, latest 24: all 24 rows on the sheet)
+    for preset, allday in [("football", False), ("roofing", False), ("football", True), ("roofing", True), ("football", "hot")]:
+        if allday == "hot":  # worst case for length: a hot day, so the sheet lists every flag level + 24 hour cells
+            for i, t in enumerate(times):
+                hr = ((t // 3600) - 5) % 24; ph = math.cos((hr - 15) / 24 * 2 * math.pi)
+                temp[i] = round(33 + 6 * ph, 1); rh[i] = round(62 - 18 * ph)
+            pg.evaluate("localStorage.clear()"); pg.fill("#place", "Sugar Land, TX"); pg.press("#place", "Enter"); pg.wait_for_timeout(1500)
         pg.select_option("#preset", preset); pg.wait_for_timeout(300)
+        if allday:
+            pg.select_option("#earliest", "0"); pg.select_option("#latest", "24"); pg.wait_for_timeout(300)
+            rows = pg.evaluate("document.querySelectorAll('#coachSheet tr, #coachSheet li').length")
+            print("midnight-midnight rows on sheet", rows)
         for lang_ui in ["en", "es"]:
             pg.click(f"button[data-lang={lang_ui}]"); pg.wait_for_timeout(200)
             for d, _ in days:
@@ -45,13 +55,13 @@ with sync_playwright() as p:
                     pg.select_option("#planDay", d); pg.select_option("#sheetLang", sl); pg.wait_for_timeout(150)
                     pg.evaluate("document.body.classList.add('print-coach')")
                     pg.emulate_media(media="print")
-                    f = f"{OUT}/{preset}_{lang_ui}_{d}_{sl}.pdf"
+                    f = f"{OUT}/{preset}{'_24h' if allday is True else ('_24h_hot' if allday else '')}_{lang_ui}_{d}_{sl}.pdf"
                     pg.pdf(path=f, format="Letter", print_background=True,
                            margin={"top": "0.5in", "bottom": "0.5in", "left": "0.5in", "right": "0.5in"})
                     n = pages(f)
                     ok = n == expect
-                    print("OK  " if ok else "FAIL", preset, lang_ui, d, sl, "pages", n, "expected", expect)
-                    if not ok: fails.append((preset, lang_ui, d, sl, n))
+                    print("OK  " if ok else "FAIL", preset + (" 0-24h" if allday is True else (" 0-24h hot" if allday else "")), lang_ui, d, sl, "pages", n, "expected", expect)
+                    if not ok: fails.append((preset + (" 0-24h" if allday is True else (" 0-24h hot" if allday else "")), lang_ui, d, sl, n))
                     pg.evaluate("document.body.classList.remove('print-coach')"); pg.emulate_media(media="screen")
     b.close()
 srv.terminate()

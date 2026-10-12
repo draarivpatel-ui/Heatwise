@@ -5,7 +5,7 @@ import {
   heatIndexF, wbgtApprox, vaporPressure, limitFor, riskLevel, scoreHours, bestWindow, hourAllowed, allClear,
   hydrationPlan, acclimatizationSchedule, sampleHours, cToF, fToC, uilFlag, UIL_MAX_HOURS,
   globeTemp, wetBulbTemp, wbgtLiljegren, solarPosition, solarParams, estimateWbgt, localHour, SAMPLE_PLACE,
-  UIL_CLASSES, WORKLOADS,
+  UIL_CLASSES, WORKLOADS, CLOTHING,
 } from "../js/heat.js";
 import { STRINGS, PRESETS } from "../js/i18n.js";
 import {
@@ -750,6 +750,23 @@ test("place search: Houston-area towns open straight away; truly ambiguous names
   assert.equal(autoPick(rankPlaces([G("Sugar Land", "Texas", "US", 88156)])).name, "Sugar Land, Texas, US");
   assert.equal(autoPick(rankPlaces([G("A", "Texas", "US", 500), G("A", "Ohio", "US")])), null);
   assert.ok(rankPlaces(GEO_FX.Houston.concat(GEO_FX.Katy)).length <= 5);
+});
+
+test("shared-link table: ?lang/?preset/?wl/?cl accept only the app's own keys (never Object.prototype names like constructor/toString)", () => {
+  const app = fs.readFileSync(new URL("../js/app.js", import.meta.url), "utf8");
+  const src = app.match(/function own\(obj, k\) \{[^\n]+\}/);
+  assert.ok(src, "app.js defines own()");
+  const own = new Function(`${src[0]}; return own;`)();
+  const TABLE = [ // [map, value from the URL, accepted?]
+    [STRINGS, "es", true], [STRINGS, "en", true], [STRINGS, "fr", false], [STRINGS, "constructor", false], [STRINGS, "toString", false],
+    [STRINGS, "__proto__", false], [STRINGS, null, false], [STRINGS, "", false],
+    [PRESETS, "football", true], [PRESETS, "roofing", true], [PRESETS, "constructor", false], [PRESETS, "hasOwnProperty", false], [PRESETS, "valueOf", false],
+    [WORKLOADS, "moderate", true], [WORKLOADS, "toString", false], [WORKLOADS, "__proto__", false], [WORKLOADS, "isPrototypeOf", false],
+    [CLOTHING, "work", true], [CLOTHING, "hasOwnProperty", false], [CLOTHING, "propertyIsEnumerable", false],
+  ];
+  for (const [map, v, want] of TABLE) assert.equal(own(map, v), want, `${JSON.stringify(v)} -> ${want}`);
+  // every key lookup on these maps in app.js goes through own(), never the prototype-walking `in`
+  assert.doesNotMatch(app, /\bin (STRINGS|PRESETS|WORKLOADS|CLOTHING)\b/);
 });
 
 test("place search: state-hint table on real Open-Meteo answers (a longer state name never also matches the shorter one inside it)", () => {

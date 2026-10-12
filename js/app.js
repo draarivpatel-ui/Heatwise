@@ -196,9 +196,9 @@ function profile() {
   return {
     guideline: $("guideline").value === "osha" ? "osha" : "uil",
     uilClass: Number($("uilClass").value) || 3,
-    workload: $("workload").value in WORKLOADS ? $("workload").value : "moderate",
+    workload: own(WORKLOADS, $("workload").value) ? $("workload").value : "moderate",
     acclimatized: $("acclimatized").checked,
-    clothing: $("clothing").value in CLOTHING ? $("clothing").value : "work",
+    clothing: own(CLOTHING, $("clothing").value) ? $("clothing").value : "work",
     duration: Math.min(12, Math.max(1, Number.isFinite(dur) && dur > 0 ? dur : 1)),
     earliest: Number($("earliest").value),
     latest: Number($("latest").value),
@@ -552,22 +552,24 @@ function syncUrl() {
   history.replaceState(null, "", `${location.pathname}?${q}`);
 }
 
+// Own keys only: a shared link like ?lang=constructor or ?wl=toString must not match Object.prototype names.
+function own(obj, k) { return k != null && Object.prototype.hasOwnProperty.call(obj, k); }
 function setIfValid(id, value, valid) { if (value != null && valid(value)) $(id).value = value; }
 
 function readUrl() {
   const q = new URLSearchParams(location.search);
   if (/^\d{4}-\d{2}-\d{2}$/.test(q.get("pd") || "")) state.urlDay = q.get("pd");
   if (["en", "es", "both"].includes(q.get("sl"))) { $("sheetLang").value = q.get("sl"); state.sheetLangTouched = true; }
-  if (q.get("lang") in STRINGS) state.lang = q.get("lang");
+  if (own(STRINGS, q.get("lang"))) state.lang = q.get("lang");
   else if (!q.has("lang") && (navigator.language || "").toLowerCase().startsWith("es")) state.lang = "es";
   applyLang();
-  setIfValid("preset", q.get("preset"), (v) => v in PRESETS);
+  setIfValid("preset", q.get("preset"), (v) => own(PRESETS, v));
   applyPreset(false); // also on a plain visit, so the default preset's workload matches what the menu shows
   setIfValid("guideline", q.get("g"), (v) => v === "uil" || v === "osha");
   setIfValid("uilClass", q.get("uc"), (v) => v === "2" || v === "3");
-  setIfValid("workload", q.get("wl"), (v) => v in WORKLOADS);
+  setIfValid("workload", q.get("wl"), (v) => own(WORKLOADS, v));
   if (q.has("acc")) $("acclimatized").checked = q.get("acc") === "1";
-  setIfValid("clothing", q.get("cl"), (v) => v in CLOTHING);
+  setIfValid("clothing", q.get("cl"), (v) => own(CLOTHING, v));
   setIfValid("duration", q.get("dur"), (v) => /^\d{1,2}$/.test(v) && +v >= 1 && +v <= 12);
   setIfValid("earliest", q.get("e"), (v) => /^\d{1,2}$/.test(v) && +v >= 0 && +v <= 23);
   setIfValid("latest", q.get("l"), (v) => /^\d{1,2}$/.test(v) && +v >= 1 && +v <= 24);
