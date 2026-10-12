@@ -383,6 +383,30 @@ test("2023 replay: IAH Aug 24 hits 109 °F, heat index matches IEM, safest windo
   assert.ok(rp.bestRows.every((r) => r.flag === "green"));
 });
 
+test("Devpost claims (frozen EurekaDev page, Oct 11 2026): every validation and replay number re-computed from the shipped code", () => {
+  const R = computeAll(NWS, OM, DAY), f = (x, d) => x.toFixed(d);
+  // "mean absolute difference of 0.28 °F and a bias of +0.01 °F over 770 hours at or above 80 °F (99.1% within 1 °F; r = 0.998)"
+  assert.equal(R.hi.stats.n, 770); assert.equal(f(R.hi.stats.mae, 2), "0.28"); assert.equal(f(R.hi.stats.bias, 2), "0.01");
+  assert.equal(f(R.hi.stats.within1 * 100, 1), "99.1"); assert.equal(f(R.hi.stats.r, 3), "0.998");
+  // "8 Houston-area points ... (1,472 point-hours)"; "about 4.2 °F cooler and 8.7 humidity points drier"
+  assert.equal(R.window.points, 8); assert.equal(R.window.totalHours, 1472);
+  assert.equal(f(-R.inputs.dT, 1), "4.2"); assert.equal(f(-R.inputs.dRH, 1), "8.7");
+  // "bias went from -3.92 °F to +0.56 °F (mean absolute difference 4.33 to 1.07 °F)"
+  assert.equal(f(R.fallback.stats.bias, 2), "-3.92"); assert.equal(f(R.app.stats.bias, 2), "0.56");
+  assert.equal(f(R.fallback.stats.mae, 2), "4.33"); assert.equal(f(R.app.stats.mae, 2), "1.07");
+  // "flag now matches the NWS in 90.6% of 1,376 hours, and in 118 of the 129 disagreements HeatWise shows the more cautious flag"
+  assert.equal(R.app.stats.n, 1376); assert.equal(f(R.app.stats.flagAgree * 100, 1), "90.6");
+  assert.deepEqual(R.cautious, { higher: 118, total: 129 });
+  // Replay: "heat index peaked at 117 °F, WBGT in the sun at 94.4 °F, black for 4 hours and red for 3 more, safest 2-hour window 6-8 AM (green)"
+  const rp = R.replay;
+  assert.equal(Math.round(rp.peakHi.hiF), 117); assert.equal(f(rp.peakWbgt.wbgtF, 1), "94.4");
+  assert.equal(rp.flagHours.black, 4); assert.equal(rp.flagHours.red, 3);
+  assert.equal(rp.rows[rp.best.start].hour, 6); assert.equal(rp.rows[rp.best.end].hour + 1, 8);
+  assert.ok(rp.bestRows.every((r) => r.flag === "green"));
+  // "matched the Iowa Environmental Mesonet's independent calculation for all 24 reports within 0.01 °F"
+  assert.equal(rp.rows.length, 24); assert.ok(R.iemDiff <= 0.01, `IEM max diff ${R.iemDiff}`);
+});
+
 test("validation section: numbers computed once, consistent, and the section sits after 'How the math works'", () => {
   const R = computeAll(NWS, OM, DAY);
   assert.ok(R.cautious.higher <= R.cautious.total && R.cautious.total > 0);
