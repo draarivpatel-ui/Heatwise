@@ -147,13 +147,14 @@ The tests check the Liljegren globe and wet-bulb temperatures and end-to-end WBG
 python3 tests/browser/offline_429_qa.py   # 16 checks: Open-Meteo rate limit (HTTP 429) and a device that goes offline, with and without a saved forecast, EN/ES;
                                           # with the service worker, a shared link reloads with no signal and the record-day replay still loads
 python3 tests/browser/coach_print_qa.py   # 36 coach-sheet PDFs: football/roofing x EN/ES page x 3 days x sheet EN/ES/Both -> 1 page per language
-python3 tests/browser/place_picker_qa.py  # 11 checks at 390 px, EN/ES: a 58-letter place name and three same-looking Springfields -> distinct labels,
-                                          # no sideways scroll with the picker open or on the long-named place's plan
+python3 tests/browser/place_picker_qa.py  # 13 checks at 390 px, EN/ES: a 58-letter place name and three same-looking Springfields -> distinct labels,
+                                          # no sideways scroll with the picker open or on the long-named place's plan,
+                                          # time-zone label, and no visible text (incl. the WBGT formula) under 12 px
 python3 tests/browser/print_plan_qa.py    # 54 checks: the Aug 24, 2023 replay coach sheet says "Historical replay ... not a forecast" (EN/ES) and stays 1 page per language;
                                           # the full "Print / save PDF" plan (48-hour table) prints the HISTORICAL REPLAY banner only for the replay,
                                           # and its table header repeats on each page instead of sticking over the rows
 ```
-Last run Oct 11, 2026: 16/16 offline/429 checks, 11/11 place-picker checks, 36/36 coach-sheet PDFs and 54/54 print checks pass.
+Last run Oct 11, 2026: 16/16 offline/429 checks, 13/13 place-picker checks, 36/36 coach-sheet PDFs and 54/54 print checks pass.
 
 ## Limitations (being honest)
 

@@ -108,7 +108,7 @@ tr.off { color: #78716c; }
 .warn { background: #fff7ed; border-color: #fdba74; }
 .warn li { margin-bottom: 4px; }
 .accl { padding-left: 22px; }
-.math code { background: #f5efe8; padding: 1px 5px; border-radius: 6px; font-size: 0.85em; white-space: normal; overflow-wrap: anywhere; }
+.math code { background: #f5efe8; padding: 1px 5px; border-radius: 6px; font-size: max(0.85em, 12px); white-space: normal; overflow-wrap: anywhere; }
 .math li { margin-bottom: 6px; }
 footer { padding: 16px; text-align: center; }
 .print-only { display: none; }
@@ -144,7 +144,7 @@ figcaption { font-weight: 600; font-size: .92rem; margin-bottom: 6px; }
 .vfacts dd { margin: 0; font-weight: 800; font-size: 1.2rem; }
 .vfacts dd.small { font-weight: 400; font-size: .82rem; }
 .vmethods ol { padding-left: 22px; } .vmethods li { margin-bottom: 6px; }
-.vmethods code { background: #f5efe8; padding: 1px 5px; border-radius: 6px; font-size: .85em; overflow-wrap: anywhere; }
+.vmethods code { background: #f5efe8; padding: 1px 5px; border-radius: 6px; font-size: max(.85em, 12px); overflow-wrap: anywhere; }
 .validation a { overflow-wrap: anywhere; }
 .sw.dot { width: 10px; height: 10px; border: 0; border-radius: 50%; }
 .sw.diag { border: 0; border-top: 2px dashed #1c1917; height: 0; border-radius: 0; }

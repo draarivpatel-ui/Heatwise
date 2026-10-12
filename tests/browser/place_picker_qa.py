@@ -3,7 +3,8 @@ A stubbed geocoding answer holds one 58-letter real place name and three same-lo
   1. the picker lists 4 distinct labels (county added where the names collide);
   2. no sideways scroll at 390 px with the picker open, and every choice fits on screen;
   3. picking the long name loads its plan with no sideways scroll;
-  4. the plan header names the time zone (CDT), the same in Spanish; no page errors.
+  4. the plan header names the time zone (CDT), the same in Spanish; no page errors;
+  5. no visible on-screen text (formula code, chips, notes) is smaller than 12 px.
 Usage: python3 tests/browser/place_picker_qa.py  (CHROME_PATH=/usr/bin/chromium optional)"""
 import re, json, os, sys, subprocess, time, math, socket
 from playwright.sync_api import sync_playwright
@@ -34,6 +35,12 @@ LONG = {"results": [
     {"name": "Springfield", "latitude": 37.35, "longitude": -92.9, "admin1": "Missouri", "admin2": "Webster", "country": "United States", "country_code": "US", "population": 900},
     {"name": "Springfield", "latitude": 39.8, "longitude": -89.64, "admin1": "Illinois", "admin2": "Sangamon", "country": "United States", "country_code": "US", "population": 116000},
     {"name": "Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch", "latitude": 53.22, "longitude": -4.2, "admin1": "Wales", "country": "United Kingdom", "country_code": "GB", "population": 3000}]}
+MINFONT = """() => { const out = []; for (const e of document.querySelectorAll('body *')) {
+  const st = getComputedStyle(e), r = e.getBoundingClientRect();
+  if (st.display === 'none' || st.visibility === 'hidden' || !r.width || !r.height || e.closest('.sr-only,[hidden]')) continue;
+  if (![...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) continue;
+  const fs = parseFloat(st.fontSize); if (fs < 12) out.push((e.tagName + '.' + (e.className || '')).slice(0, 30) + ' ' + fs.toFixed(2) + 'px "' + e.textContent.trim().slice(0, 30) + '"'); }
+  return out; }"""
 with sync_playwright() as p:
     b = p.chromium.launch(**({"executable_path": os.environ["CHROME_PATH"]} if os.environ.get("CHROME_PATH") else {}), args=["--no-sandbox"])
     for lang in ("en", "es"):
@@ -57,6 +64,8 @@ with sync_playwright() as p:
         pg.wait_for_selector("#results:not([hidden])", timeout=10000); pg.wait_for_timeout(500)
         sw = pg.evaluate("document.documentElement.scrollWidth")
         check(f"{lang} 3 plan for the 58-letter place: no sideways scroll at 390 px", sw <= 390, sw)
+        tiny = pg.evaluate(MINFONT)
+        check(f"{lang} 3 every visible text on the plan page (incl. the WBGT formula) is at least 12 px", not tiny, tiny[:6])
         meta = pg.text_content("#forecastMeta")
         check(f"{lang} 3 plan header names the time zone from the IANA zone (CDT for America/Chicago in October)", "(CDT)" in meta or "(CDT \u2192 CST)" in meta, meta)
         ctx.close()
