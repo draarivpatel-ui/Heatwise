@@ -27,6 +27,12 @@ export function parseQuery(query) {
 // Whole-word match, so the hint "tx" never matches inside another word and "in" (Indiana) needs to stand alone.
 const hasWord = (hint, v) => new RegExp(`(^|[^a-z])${String(v).toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^a-z])`).test(hint);
 
+// The hint names `v`, and not only as part of a longer state name: "West Virginia" must not also match "Virginia",
+// nor "New Mexico" the country "Mexico" (else "Bluefield, West Virginia" asks West Virginia or Virginia).
+const LONGER = Object.keys(US_STATES);
+const hintNames = (hint, v) => hasWord(hint, v) &&
+  !LONGER.some((L) => L.length > String(v).length && hasWord(L.toLowerCase(), v) && hasWord(hint, L) && !hasWord(hint.split(L.toLowerCase()).join(" "), v));
+
 /**
  * Rank raw Open-Meteo results: places whose state/country matches the hint first, then by population
  * (bigger first; Open-Meteo already orders by relevance, and the sort keeps that order for ties). Top 5.
@@ -36,7 +42,7 @@ export function rankPlaces(results, hint = "") {
     name: [r.name, r.admin1, r.country_code].filter(Boolean).join(", "),
     lat: r.latitude, lon: r.longitude,
     pop: Number(r.population) || 0,
-    score: hint && [r.admin1, r.country, r.country_code, US_STATES[r.admin1]].some((v) => v && hasWord(hint, v)) ? 1 : 0,
+    score: hint && [r.admin1, r.country, r.country_code, US_STATES[r.admin1]].some((v) => v && hintNames(hint, v)) ? 1 : 0,
     i, r,
   })).sort((a, b) => b.score - a.score || b.pop - a.pop || a.i - b.i)
     // the same name at the same spot (to ~1 km) is one place listed twice: keep the first

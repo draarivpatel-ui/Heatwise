@@ -752,6 +752,37 @@ test("place search: Houston-area towns open straight away; truly ambiguous names
   assert.ok(rankPlaces(GEO_FX.Houston.concat(GEO_FX.Katy)).length <= 5);
 });
 
+test("place search: state-hint table on real Open-Meteo answers (a longer state name never also matches the shorter one inside it)", () => {
+  const FX = JSON.parse(fs.readFileSync(new URL("./fixtures/geocode-state-hints-2026-10-11.json", import.meta.url), "utf8"));
+  const run = (q) => { const { main, hint } = parseQuery(q); return autoPick(rankPlaces(FX[main], hint)); };
+  // query -> place it must open straight away (null = must show the picker)
+  const TABLE = [
+    ["Bluefield, West Virginia", "Bluefield, West Virginia, US"],   // was a picker: 'virginia' inside 'west virginia' matched Bluefield, VA too
+    ["Bluefield, WV", "Bluefield, West Virginia, US"],
+    ["Bluefield, Virginia", "Bluefield, Virginia, US"],
+    ["Bluefield, VA", "Bluefield, Virginia, US"],
+    ["Santa Fe, New Mexico", "Santa Fe, New Mexico, US"],
+    ["Santa Fe, NM", "Santa Fe, New Mexico, US"],
+    ["Santa Fe, Texas", "Santa Fe, Texas, US"],
+    ["Santa Fe, Argentina", "Santa Fe, Santa Fe, AR"],
+    ["Charleston, West Virginia", "Charleston, West Virginia, US"],
+    ["Charleston, South Carolina", "Charleston, South Carolina, US"],
+    ["Charleston, IL", "Charleston, Illinois, US"],
+    ["Princeton, West Virginia", "Princeton, West Virginia, US"],
+    ["Princeton, NJ", "Princeton, New Jersey, US"],
+    ["Princeton, IN", "Princeton, Indiana, US"],
+    ["Princeton, Texas", "Princeton, Texas, US"],
+    ["Charleston", null],            // SC is under 10x WV: ask
+    ["Princeton", null],
+    ["Santa Fe", null],
+  ];
+  for (const [q, want] of TABLE) assert.equal(run(q)?.name ?? null, want, q);
+  // The country 'Mexico' is only named when the hint says Mexico on its own, not inside 'New Mexico'.
+  const nm = rankPlaces([{ name: "X", admin1: "Jalisco", country: "Mexico", country_code: "MX", latitude: 20, longitude: -103 }], "new mexico");
+  assert.equal(nm[0].score, 0);
+  assert.equal(rankPlaces([{ name: "X", admin1: "Jalisco", country: "Mexico", country_code: "MX", latitude: 20, longitude: -103 }], "mexico")[0].score, 1);
+});
+
 test("zone label: one abbreviation normally, both when the 48 h cross a clock change (DST-aware, from the IANA zone)", () => {
   const ms = (iso) => Date.parse(iso);
   assert.equal(zoneLabel("America/Chicago", ms("2026-07-01T12:00Z"), ms("2026-07-03T11:00Z")), "CDT");

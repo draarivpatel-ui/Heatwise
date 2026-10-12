@@ -1,0 +1,402 @@
+{
+"_note": "Real Open-Meteo Geocoding answers (count=10, language=en), fetched 2026-10-11, trimmed to the fields places.js reads.",
+"Bluefield": [
+{
+"name": "Bluefield",
+"latitude": 37.26984,
+"longitude": -81.22232,
+"admin1": "West Virginia",
+"admin2": "Mercer",
+"country": "United States",
+"country_code": "US",
+"population": 10323
+},
+{
+"name": "Bluefield",
+"latitude": 37.25262,
+"longitude": -81.27121,
+"admin1": "Virginia",
+"admin2": "Tazewell",
+"country": "United States",
+"country_code": "US",
+"population": 5279
+},
+{
+"name": "Bluefield",
+"latitude": 27.20005,
+"longitude": -80.58728,
+"admin1": "Florida",
+"admin2": "Martin",
+"country": "United States",
+"country_code": "US"
+},
+{
+"name": "Bluefield",
+"latitude": 34.52489,
+"longitude": -78.60196,
+"admin1": "North Carolina",
+"admin2": "Bladen",
+"country": "United States",
+"country_code": "US"
+},
+{
+"name": "Bluefield",
+"latitude": 35.9384,
+"longitude": -86.55555,
+"admin1": "Tennessee",
+"admin2": "Rutherford",
+"country": "United States",
+"country_code": "US"
+},
+{
+"name": "Bluefields",
+"latitude": 12.01292,
+"longitude": -83.76449,
+"admin1": "South Caribbean Coast",
+"country": "Nicaragua",
+"country_code": "NI",
+"population": 44373
+},
+{
+"name": "Bluefields",
+"latitude": 18.16602,
+"longitude": -78.02702,
+"admin1": "Westmoreland",
+"admin2": "Bluefields",
+"country": "Jamaica",
+"country_code": "JM",
+"population": 2828
+},
+{
+"name": "Bluefields",
+"latitude": 18.37618,
+"longitude": -77.34,
+"admin1": "Saint Ann Parish",
+"admin2": "Browns Town",
+"country": "Jamaica",
+"country_code": "JM"
+},
+{
+"name": "Bluefields Bluff",
+"latitude": 11.9947,
+"longitude": -83.69038,
+"admin1": "South Caribbean Coast",
+"country": "Nicaragua",
+"country_code": "NI"
+},
+{
+"name": "Bluefield Heights",
+"latitude": 37.25097,
+"longitude": -79.96948,
+"admin1": "Virginia",
+"admin2": "City of Roanoke",
+"country": "United States",
+"country_code": "US"
+}
+],
+"Santa Fe": [
+{
+"name": "Santa Fe",
+"latitude": -31.64881,
+"longitude": -60.70868,
+"admin1": "Santa Fe",
+"admin2": "Capital Department",
+"country": "Argentina",
+"country_code": "AR",
+"population": 391164
+},
+{
+"name": "Santa Fe",
+"latitude": 35.68698,
+"longitude": -105.9378,
+"admin1": "New Mexico",
+"admin2": "Santa Fe",
+"country": "United States",
+"country_code": "US",
+"population": 87505
+},
+{
+"name": "Santa Fe de Mondújar",
+"latitude": 36.97479,
+"longitude": -2.53126,
+"admin1": "Andalusia",
+"admin2": "Almeria",
+"country": "Spain",
+"country_code": "ES",
+"population": 429
+},
+{
+"name": "Santa Fé",
+"latitude": 8.51185,
+"longitude": -81.07789,
+"admin1": "Veraguas Province",
+"admin2": "Santa Fé District",
+"country": "Panama",
+"country_code": "PA",
+"population": 968
+},
+{
+"name": "Santa Fe",
+"latitude": 29.37801,
+"longitude": -95.10576,
+"admin1": "Texas",
+"admin2": "Galveston",
+"country": "United States",
+"country_code": "US",
+"population": 13037
+},
+{
+"name": "Santa Fe",
+"latitude": 11.18556,
+"longitude": 124.91611,
+"admin1": "Eastern Visayas",
+"admin2": "Province of Leyte",
+"country": "Philippines",
+"country_code": "PH",
+"population": 3010
+},
+{
+"name": "Santa Fe",
+"latitude": 11.1544,
+"longitude": 123.8058,
+"admin1": "Central Visayas",
+"admin2": "Province of Cebu",
+"country": "Philippines",
+"country_code": "PH",
+"population": 2405
+},
+{
+"name": "Santa Fe",
+"latitude": 12.15656,
+"longitude": 121.99411,
+"admin1": "Mimaropa",
+"admin2": "Province of Romblon",
+"country": "Philippines",
+"country_code": "PH",
+"population": 2358
+},
+{
+"name": "Santa Fé",
+"latitude": 8.65841,
+"longitude": -78.15886,
+"admin1": "Provincia del Darién",
+"admin2": "Santa Fe",
+"country": "Panama",
+"country_code": "PA",
+"population": 1499
+},
+{
+"name": "Santa Fe",
+"latitude": 16.1595,
+"longitude": 120.9381,
+"admin1": "Cagayan Valley",
+"admin2": "Province of Nueva Vizcaya",
+"country": "Philippines",
+"country_code": "PH"
+}
+],
+"Princeton": [
+{
+"name": "Princeton",
+"latitude": 38.35532,
+"longitude": -87.56752,
+"admin1": "Indiana",
+"admin2": "Gibson",
+"country": "United States",
+"country_code": "US",
+"population": 8626
+},
+{
+"name": "Princeton",
+"latitude": 41.36809,
+"longitude": -89.46481,
+"admin1": "Illinois",
+"admin2": "Bureau",
+"country": "United States",
+"country_code": "US",
+"population": 7594
+},
+{
+"name": "Princeton",
+"latitude": 37.10922,
+"longitude": -87.88196,
+"admin1": "Kentucky",
+"admin2": "Caldwell",
+"country": "United States",
+"country_code": "US",
+"population": 6174
+},
+{
+"name": "Princeton",
+"latitude": 37.36623,
+"longitude": -81.10259,
+"admin1": "West Virginia",
+"admin2": "Mercer",
+"country": "United States",
+"country_code": "US",
+"population": 6035
+},
+{
+"name": "Princeton",
+"latitude": 40.40084,
+"longitude": -93.5805,
+"admin1": "Missouri",
+"admin2": "Mercer",
+"country": "United States",
+"country_code": "US",
+"population": 1133
+},
+{
+"name": "Princeton",
+"latitude": 40.34872,
+"longitude": -74.65905,
+"admin1": "New Jersey",
+"admin2": "Mercer",
+"country": "United States",
+"country_code": "US",
+"population": 29603
+},
+{
+"name": "Princeton",
+"latitude": 33.18012,
+"longitude": -96.49804,
+"admin1": "Texas",
+"admin2": "Collin",
+"country": "United States",
+"country_code": "US",
+"population": 8939
+},
+{
+"name": "Princeton",
+"latitude": 45.56997,
+"longitude": -93.58163,
+"admin1": "Minnesota",
+"admin2": "Mille Lacs County",
+"country": "United States",
+"country_code": "US",
+"population": 4680
+},
+{
+"name": "Princeton",
+"latitude": 42.4487,
+"longitude": -71.8773,
+"admin1": "Massachusetts",
+"admin2": "Worcester",
+"country": "United States",
+"country_code": "US",
+"population": 3412
+},
+{
+"name": "Princeton",
+"latitude": 35.46599,
+"longitude": -78.16055,
+"admin1": "North Carolina",
+"admin2": "Johnston",
+"country": "United States",
+"country_code": "US",
+"population": 1284
+}
+],
+"Charleston": [
+{
+"name": "Charleston",
+"latitude": 32.77632,
+"longitude": -79.93275,
+"admin1": "South Carolina",
+"admin2": "Charleston County",
+"country": "United States",
+"country_code": "US",
+"population": 132609
+},
+{
+"name": "Charleston",
+"latitude": 38.34982,
+"longitude": -81.63262,
+"admin1": "West Virginia",
+"admin2": "Kanawha County",
+"country": "United States",
+"country_code": "US",
+"population": 46838
+},
+{
+"name": "Charleston",
+"latitude": 39.49615,
+"longitude": -88.17615,
+"admin1": "Illinois",
+"admin2": "Coles",
+"country": "United States",
+"country_code": "US",
+"population": 21196
+},
+{
+"name": "Charleston",
+"latitude": 36.92089,
+"longitude": -89.35063,
+"admin1": "Missouri",
+"admin2": "Mississippi",
+"country": "United States",
+"country_code": "US",
+"population": 5815
+},
+{
+"name": "Charlestown",
+"latitude": 42.37787,
+"longitude": -71.062,
+"admin1": "Massachusetts",
+"admin2": "Suffolk",
+"country": "United States",
+"country_code": "US",
+"population": 20397
+},
+{
+"name": "Charleston",
+"latitude": 35.29704,
+"longitude": -94.03632,
+"admin1": "Arkansas",
+"admin2": "Franklin",
+"country": "United States",
+"country_code": "US",
+"population": 2483
+},
+{
+"name": "Townsend",
+"latitude": 39.39511,
+"longitude": -75.6916,
+"admin1": "Delaware",
+"admin2": "New Castle County",
+"country": "United States",
+"country_code": "US",
+"population": 2177
+},
+{
+"name": "Charleston",
+"latitude": 34.00678,
+"longitude": -90.05676,
+"admin1": "Mississippi",
+"admin2": "Tallahatchie County",
+"country": "United States",
+"country_code": "US",
+"population": 2048
+},
+{
+"name": "Charleston",
+"latitude": 45.08506,
+"longitude": -69.04059,
+"admin1": "Maine",
+"admin2": "Penobscot",
+"country": "United States",
+"country_code": "US",
+"population": 1452
+},
+{
+"name": "Start",
+"latitude": 32.48653,
+"longitude": -91.85929,
+"admin1": "Louisiana",
+"admin2": "Richland",
+"country": "United States",
+"country_code": "US",
+"population": 905
+}
+]
+}
