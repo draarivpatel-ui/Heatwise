@@ -778,6 +778,19 @@ test("every outside link on the page and in the guidance strings is https (no in
   assert.doesNotMatch(strings, /http:\/\/(?!www\.w3\.org)/);
 });
 
+test("link preview: Open Graph + large Twitter card point at the live page and a real 1280x800 screenshot in the repo", () => {
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const meta = (k) => (html.match(new RegExp(`<meta (?:property|name)="${k}" content="([^"]+)"`)) || [])[1];
+  assert.equal(meta("og:url"), "https://aariv.me/Heatwise/");
+  assert.equal(meta("twitter:card"), "summary_large_image");
+  for (const k of ["og:title", "og:description", "og:image:alt"]) assert.ok((meta(k) || "").length > 20, k);
+  const img = meta("og:image"); assert.ok(img.startsWith(meta("og:url")), img);
+  const png = fs.readFileSync(new URL("../" + img.slice(meta("og:url").length), import.meta.url));
+  assert.equal(png.subarray(1, 4).toString(), "PNG");
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [Number(meta("og:image:width")), Number(meta("og:image:height"))]);
+  assert.ok(png.length < 300e3, "small enough for chat previews");
+});
+
 test("place search: state-hint table on real Open-Meteo answers (a longer state name never also matches the shorter one inside it)", () => {
   const FX = JSON.parse(fs.readFileSync(new URL("./fixtures/geocode-state-hints-2026-10-11.json", import.meta.url), "utf8"));
   const run = (q) => { const { main, hint } = parseQuery(q); return autoPick(rankPlaces(FX[main], hint)); };
