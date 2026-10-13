@@ -8,6 +8,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: node tests/heat.test.mjs                 # unit tests: WBGT physics, flags, window, forecast fallbacks, 429 + offline cache
+      - run: node tests/docs.test.mjs                 # README links, paths and data-file docs
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install playwright==1.63.0 && python -m playwright install --with-deps chromium

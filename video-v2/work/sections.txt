@@ -1,0 +1,5 @@
+file '/workspace/work/hackathons/eurekadev/video-v2/work/sec_A.mp4'
+file '/workspace/work/hackathons/eurekadev/video-v2/work/sec_B.mp4'
+file '/workspace/work/hackathons/eurekadev/video-v2/work/sec_C.mp4'
+file '/workspace/work/hackathons/eurekadev/video-v2/work/sec_D.mp4'
+file '/workspace/work/hackathons/eurekadev/video-v2/work/sec_E.mp4'

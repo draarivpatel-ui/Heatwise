@@ -1,0 +1,166 @@
+1
+00:00:00,395 --> 00:00:07,233
+In 2023, heat killed 2,325 people in the
+U.S. Texas set a record with 334 deaths,
+
+2
+00:00:07,253 --> 00:00:09,805
+and Harris County had the most.
+
+3
+00:00:11,148 --> 00:00:15,991
+This is HeatWise, built by Aariv Patel,
+a high-school student from the Houston area.
+
+4
+00:00:19,143 --> 00:00:23,222
+Weather apps say it feels like 104. But
+the heat index is a shade number.
+
+5
+00:00:23,242 --> 00:00:29,235
+It leaves out the sun and how hard you're working, and
+OSHA warns that workers have died of heat stroke at a
+
+6
+00:00:29,255 --> 00:00:30,601
+heat index of only 86.
+
+7
+00:00:30,978 --> 00:00:35,520
+A coach needs to know: is practice safe
+right now, and if not, when is?
+
+8
+00:00:35,895 --> 00:00:41,812
+Type a city, keep football practice, which uses
+the Texas UIL heat flags schools must follow,
+
+9
+00:00:41,832 --> 00:00:45,894
+and pick a two-hour practice between 6 AM and 9 PM.
+
+10
+00:00:47,366 --> 00:00:53,657
+For U.S. places, HeatWise uses the National
+Weather Service's hourly forecast and estimates WBGT,
+
+11
+00:00:53,677 --> 00:00:57,714
+the heat-stress index UIL, OSHA and the military use.
+
+12
+00:00:58,084 --> 00:01:03,337
+This is live for Sugar Land today. The card shows
+this hour's flag and what it means for practice,
+
+13
+00:01:03,357 --> 00:01:05,835
+and the safest window in the next 48 hours.
+
+14
+00:01:06,206 --> 00:01:12,183
+Sunshine data didn't load for this recording, so HeatWise
+used its simpler estimate and says so on screen.
+
+15
+00:01:12,553 --> 00:01:16,269
+On the chart, the line is heat
+stress, the colored bands are the flags,
+
+16
+00:01:16,289 --> 00:01:18,404
+and the green box is the best time.
+
+17
+00:01:19,864 --> 00:01:25,282
+Now a known dangerous day: August 24,
+2023, when Houston hit 109 degrees,
+
+18
+00:01:25,302 --> 00:01:30,721
+replayed from the airport's archived reports and
+labeled as history, not a forecast.
+
+19
+00:01:31,092 --> 00:01:36,575
+The hottest hour hit a black flag: no
+outdoor workouts. HeatWise moves practice to early morning,
+
+20
+00:01:36,595 --> 00:01:37,951
+while it's still green.
+
+21
+00:01:39,654 --> 00:01:45,956
+Same weather, different person. Switch to roofing, and HeatWise
+uses the OSHA and NIOSH limit for heavy work.
+
+22
+00:01:47,350 --> 00:01:51,619
+Check acclimatized, and the limit rises
+from about 73 to 79 degrees.
+
+23
+00:01:51,639 --> 00:01:54,836
+It's personal to the activity, not just the weather.
+
+24
+00:01:56,297 --> 00:02:00,848
+Below the chart: a water plan
+from NIOSH, a day-by-day acclimatization schedule,
+
+25
+00:02:00,868 --> 00:02:04,276
+and heat-stroke warning signs with call 911 up front.
+
+26
+00:02:06,037 --> 00:02:09,273
+The one-page coach plan puts the whole day on one sheet,
+
+27
+00:02:09,293 --> 00:02:13,122
+here in Spanish for families and crews,
+ready to print for the clipboard.
+
+28
+00:02:14,867 --> 00:02:17,318
+And one click turns the whole app into Spanish.
+
+29
+00:02:19,896 --> 00:02:28,160
+Is it right? HeatWise was checked against the National Weather
+Service at eight Houston-area points over 1,472 forecast hours.
+
+30
+00:02:29,657 --> 00:02:34,060
+Its heat index matched the Weather Service's within 0.28 °F.
+
+31
+00:02:34,430 --> 00:02:38,962
+For WBGT, the average bias is about
+half a degree, on the cautious side,
+
+32
+00:02:38,982 --> 00:02:44,165
+and the typical gap is about 1 °F.
+The first version read almost four degrees low,
+
+33
+00:02:44,185 --> 00:02:47,091
+so U.S. places switched to the Weather Service grid.
+
+34
+00:02:49,071 --> 00:02:56,063
+Under the hood: the Liljegren physics model for WBGT,
+and a sliding-window search for the safest window.
+
+35
+00:02:56,083 --> 00:03:01,013
+It's plain JavaScript, free, with no
+API keys, and 84 passing tests.
+
+36
+00:03:02,086 --> 00:03:05,849
+HeatWise: know the heat, and plan around it. Thanks for watching.
+

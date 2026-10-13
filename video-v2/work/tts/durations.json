@@ -1,0 +1,107 @@
+{
+ "a1": {
+  "text": "In 2023, heat killed 2,325 people in the U.S. Texas set a record with 334 deaths, and Harris County had the most.",
+  "dur": 9.43,
+  "caption": "In 2023, heat killed 2,325 people in the U.S. Texas set a record with 334 deaths, and Harris County had the most."
+ },
+ "a2": {
+  "text": "This is HeatWise, built by Aariv Patel, a high-school student from the Houston area.",
+  "dur": 4.863,
+  "caption": "This is HeatWise, built by Aariv Patel, a high-school student from the Houston area."
+ },
+ "a3": {
+  "text": "Weather apps say it feels like 104. But the heat index is a shade number. It leaves out the sun and how hard you're working, and OSHA warns that workers have died of heat stroke at a heat index of only 86.",
+  "dur": 11.478,
+  "caption": "Weather apps say it feels like 104. But the heat index is a shade number. It leaves out the sun and how hard you're working, and OSHA warns that workers have died of heat stroke at a heat index of only 86."
+ },
+ "a4": {
+  "text": "A coach needs to know: is practice safe right now, and if not, when is?",
+  "dur": 4.562,
+  "caption": "A coach needs to know: is practice safe right now, and if not, when is?"
+ },
+ "a5": {
+  "text": "Type a city, keep football practice, which uses the Texas U I L heat flags schools must follow, and pick a two-hour practice between 6 AM and 9 PM.",
+  "dur": 10.019,
+  "caption": "Type a city, keep football practice, which uses the Texas UIL heat flags schools must follow, and pick a two-hour practice between 6 AM and 9 PM."
+ },
+ "b1": {
+  "text": "For U.S. places, HeatWise uses the National Weather Service's hourly forecast and estimates W B G T, the heat-stress index U I L, OSHA and the military use.",
+  "dur": 10.368,
+  "caption": "For U.S. places, HeatWise uses the National Weather Service's hourly forecast and estimates WBGT, the heat-stress index UIL, OSHA and the military use."
+ },
+ "b2": {
+  "text": "This is live for Sugar Land today. The card shows this hour's flag and what it means for practice, and the safest window in the next 48 hours.",
+  "dur": 7.771,
+  "caption": "This is live for Sugar Land today. The card shows this hour's flag and what it means for practice, and the safest window in the next 48 hours."
+ },
+ "b3": {
+  "text": "Sunshine data didn't load for this recording, so HeatWise used its simpler estimate and says so on screen.",
+  "dur": 5.997,
+  "caption": "Sunshine data didn't load for this recording, so HeatWise used its simpler estimate and says so on screen."
+ },
+ "b4": {
+  "text": "On the chart, the line is heat stress, the colored bands are the flags, and the green box is the best time.",
+  "dur": 5.871,
+  "caption": "On the chart, the line is heat stress, the colored bands are the flags, and the green box is the best time."
+ },
+ "c1": {
+  "text": "Now a known dangerous day: August 24, 2023, when Houston hit 109 degrees, replayed from the airport's archived reports and labeled as history, not a forecast.",
+  "dur": 10.877,
+  "caption": "Now a known dangerous day: August 24, 2023, when Houston hit 109 degrees, replayed from the airport's archived reports and labeled as history, not a forecast."
+ },
+ "c2": {
+  "text": "The hottest hour hit a black flag: no outdoor workouts. HeatWise moves practice to early morning, while it's still green.",
+  "dur": 6.879,
+  "caption": "The hottest hour hit a black flag: no outdoor workouts. HeatWise moves practice to early morning, while it's still green."
+ },
+ "c3": {
+  "text": "Same weather, different person. Switch to roofing, and HeatWise uses the OSHA and NIOSH limit for heavy work.",
+  "dur": 6.322,
+  "caption": "Same weather, different person. Switch to roofing, and HeatWise uses the OSHA and NIOSH limit for heavy work."
+ },
+ "c4": {
+  "text": "Check acclimatized, and the limit rises from about 73 to 79 degrees. It's personal to the activity, not just the weather.",
+  "dur": 7.506,
+  "caption": "Check acclimatized, and the limit rises from about 73 to 79 degrees. It's personal to the activity, not just the weather."
+ },
+ "d1": {
+  "text": "Below the chart: a water plan from NIOSH, a day-by-day acclimatization schedule, and heat-stroke warning signs with call 9 1 1 up front.",
+  "dur": 7.999,
+  "caption": "Below the chart: a water plan from NIOSH, a day-by-day acclimatization schedule, and heat-stroke warning signs with call 911 up front."
+ },
+ "d2": {
+  "text": "The one-page coach plan puts the whole day on one sheet, here in Spanish for families and crews, ready to print for the clipboard.",
+  "dur": 7.105,
+  "caption": "The one-page coach plan puts the whole day on one sheet, here in Spanish for families and crews, ready to print for the clipboard."
+ },
+ "d3": {
+  "text": "And one click turns the whole app into Spanish.",
+  "dur": 2.471,
+  "caption": "And one click turns the whole app into Spanish."
+ },
+ "e1": {
+  "text": "Is it right? HeatWise was checked against the National Weather Service at eight Houston-area points over 1,472 forecast hours.",
+  "dur": 8.284,
+  "caption": "Is it right? HeatWise was checked against the National Weather Service at eight Houston-area points over 1,472 forecast hours."
+ },
+ "e2": {
+  "text": "Its heat index matched the Weather Service's within 0.28 degrees Fahrenheit.",
+  "dur": 4.423,
+  "caption": "Its heat index matched the Weather Service's within 0.28 \u00b0F."
+ },
+ "e3": {
+  "text": "For W B G T, the average bias is about half a degree, on the cautious side, and the typical gap is about 1 degree Fahrenheit. The first version read almost four degrees low, so U.S. places switched to the Weather Service grid.",
+  "dur": 12.681,
+  "caption": "For WBGT, the average bias is about half a degree, on the cautious side, and the typical gap is about 1 \u00b0F. The first version read almost four degrees low, so U.S. places switched to the Weather Service grid."
+ },
+ "e4": {
+  "text": "Under the hood: the Lil-yeh-gren physics model for W B G T, and a sliding-window search for the safest window. It's plain JavaScript, free, with no API keys, and 84 passing tests.",
+  "dur": 11.962,
+  "caption": "Under the hood: the Liljegren physics model for WBGT, and a sliding-window search for the safest window. It's plain JavaScript, free, with no API keys, and 84 passing tests."
+ },
+ "e5": {
+  "text": "HeatWise: know the heat, and plan around it. Thanks for watching.",
+  "dur": 3.783,
+  "caption": "HeatWise: know the heat, and plan around it. Thanks for watching."
+ }
+}
