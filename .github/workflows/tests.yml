@@ -17,6 +17,7 @@ jobs:
       - run: python tests/browser/coach_print_qa.py   # coach sheet: 1 Letter page per language, incl. midnight-to-midnight
       - run: python tests/browser/place_picker_qa.py  # 390 px picker: long names wrap, same-looking places told apart, EN/ES
       - run: python tests/browser/axe_states_qa.py    # axe-core: 9 states x 390/1280 x EN/ES, plus a language switch mid-flow
+      - run: python tests/browser/axe_baseline_qa.py  # axe-core WCAG 2.2 AA (incl. target-size) at 360/1280: no NEW serious/critical vs the Oct 12 audit baseline
       - run: python tests/browser/lang_flash_qa.py    # Spanish visitors never see the English page flash; 3 s fail-safe
       - run: python tests/browser/url_params_qa.py    # shared links, real and hostile (?lang=constructor ...): no error, no blank menu, defaults kept
       - run: python tests/browser/edge_inputs_qa.py   # extreme numbers, same start/finish hour, 1-letter search, language switch mid-flow
