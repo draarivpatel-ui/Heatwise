@@ -102,7 +102,7 @@ On Aug 24, 2023, Bush Intercontinental Airport (IAH) reached **109 °F**, tying 
 - **NWS API** (api.weather.gov) for U.S. temperature, humidity and wind, and **Open-Meteo** Forecast and Geocoding APIs (free, no key). The two forecast requests run in parallel. NWS usage rules followed: the API asks for an identifying User-Agent; browsers don't let a page set that header, so the browser sends its own (the API accepts browser requests and returns `Access-Control-Allow-Origin: *`), while the Node data script sends a descriptive one. Only CORS-safelisted headers are sent (`Accept: application/geo+json`), so there is no preflight; coordinates are rounded to 4 decimals (more decimals get a redirect); a 429/5xx from the grid endpoint is retried once; a 9 s timeout and a stale-grid check (> 36 h old) fall back to Open-Meteo. Grid hours before the issue time are ignored (they aren't refreshed). If Open-Meteo fails but the NWS works, the plan uses NWS data with the simpler WBGT formula. If neither loads (offline, rate limits), HeatWise says so, shows a clearly labelled **synthetic sample day**, keeps your place in the link, and offers **Try again**.
 - All math lives in pure functions in [`js/heat.js`](js/heat.js) with a dependency-free test suite in [`tests/heat.test.mjs`](tests/heat.test.mjs).
 - **Keyboard and screen reader (Oct 11, 2026):** headless Chromium at 1280 and 390 px, English and Spanish, keyboard only: place search, the place picker (arrow keys, Esc), "Refresh now / Actualizar ahora" and the saved/stale forecast labels. Focus order, a visible focus ring at every stop, no keyboard trap, every status change (searching, picker, saved forecast, "service didn't answer", "Forecast updated", not found, search down) announced through the `aria-live` status line, and axe-core WCAG 2.0/2.1 A/AA + best practice: **0 violations** in all 7 states × 4 runs (156 checks, plus 28 in the Refresh-now check).
-- **Lighthouse (mobile, run against the live site https://aariv.me/Heatwise/, Oct 11, 2026, 3 runs):** Performance 98–99, Accessibility 100, Best Practices 100, SEO 100; first paint 1.3–1.4 s, layout shift 0. No third-party CSS, fonts or scripts. The page ships its English text in the HTML (so nothing jumps when the scripts translate it), preloads its ES modules, and computes the validation study (~1,000 hours of WBGT) only when you scroll near it.
+- **Lighthouse (mobile, run against the live site https://aariv.me/Heatwise/, Oct 11, 2026, 3 runs):** Performance 98–99, Accessibility 100, Best Practices 100, SEO 100; first paint 1.3–1.4 s, layout shift 0. No CSS, fonts or scripts are loaded from other sites (the two font families are self-hosted; see **Third-party licences**). The page ships its English text in the HTML (so nothing jumps when the scripts translate it), preloads its ES modules, and computes the validation study (~1,000 hours of WBGT) only when you scroll near it.
 
 ```
 index.html        UI markup
@@ -213,6 +213,22 @@ This project was built with help from an AI assistant (Hark), which drafted code
 - Iowa Environmental Mesonet, ASOS/METAR archive (IAH hourly reports): https://mesonet.agron.iastate.edu/request/download.phtml
 - Open-Meteo Historical Weather API (ERA5): https://open-meteo.com/en/docs/historical-weather-api
 - Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0)
+
+## Third-party licences
+
+HeatWise ships no third-party code. What it does use from others, with licence and source (checked Oct 13, 2026):
+
+| What | How HeatWise uses it | Licence | Source |
+|---|---|---|---|
+| Public Sans 400/600/800 (latin subsets) | self-hosted in `fonts/` | SIL Open Font License 1.1 (GSA's changes are CC0) | https://github.com/uswds/public-sans |
+| IBM Plex Mono Medium (latin subset) | self-hosted in `fonts/` | SIL Open Font License 1.1, © 2017 IBM Corp., Reserved Font Name "Plex" | https://github.com/IBM/plex |
+| Font licence and notices | full OFL text shipped as `fonts/OFL.txt` | n/a | n/a |
+| National Weather Service API | live forecast; archived in `data/validation/` | Public domain, unless noted; no implied NWS endorsement, and changed data isn't presented as official | https://www.weather.gov/disclaimer |
+| Open-Meteo Forecast, Historical (ERA5) and Geocoding APIs | live forecast and place search; archived in `data/validation/` | CC BY 4.0; the app shows "Weather data by Open-Meteo.com" next to the data, as the licence asks | https://open-meteo.com/en/licence |
+| Place names returned by Open-Meteo Geocoding | place search | GeoNames, CC BY 4.0 | https://www.geonames.org/ |
+| Iowa Environmental Mesonet ASOS archive (IAH hourly reports) | 2023 record-day replay, `data/validation/replay-iah-2023-08-24.json` | Public domain; IEM asks for attribution (credited above) | https://mesonet.agron.iastate.edu/disclaimer.php |
+
+Test tooling only (runs in CI, never shipped to users): Playwright (Apache-2.0) and axe-core (MPL-2.0).
 
 ## License
 
