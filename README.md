@@ -193,6 +193,8 @@ Last run Oct 12, 2026: 16/16 offline/429, 180/180 axe, 15/15 language-flash, 58/
 
 This project was built with help from an AI assistant (Hark), which drafted code, tests and copy under Aariv Patel's direction. The app calls no AI service at runtime: every number comes from the published formulas and thresholds listed below, and the tests check them against reference implementations and official values.
 
+The demo video on the Devpost page (rendered before submission on Oct 11, 2026) was also made with Hark: it has no voiceover, and Hark recorded the screen footage of the live app and drafted its on-screen captions, chapter cards and edit over a music bed. Its test card (55 tests passed) was true when it was rendered; the current counts are earlier in this README.
+
 ## Sources
 
 - OSHA, *Heat Hazard Recognition* (NIOSH limits, clothing factors, workload table): https://www.osha.gov/heat-exposure/hazards
