@@ -9,8 +9,7 @@ and Harris County had the most.
 
 3
 00:00:11,148 --> 00:00:15,991
-This is HeatWise, built by Aariv Patel,
-a high-school student from the Houston area.
+This is HeatWise, built by Aariv Patel.
 
 4
 00:00:19,143 --> 00:00:23,222

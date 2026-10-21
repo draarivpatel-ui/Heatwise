@@ -40,7 +40,7 @@ Built for **EurekaDev 2026**, Coding Track, Problem in the Community.
 
 ## Why I built this
 
-Growing up in the Houston area, August football and marching band practices happen in brutal heat, and outdoor workers don't get to pick their hours.
+Across Texas and the Gulf Coast, August football and marching band practices happen in brutal heat, and outdoor workers don't get to pick their hours.
 
 - U.S. heat-related deaths rose from 1,069 in 1999 to **2,325 in 2023**, the highest in the 25-year study period ([Howard et al., *JAMA*, 2024](https://jamanetwork.com/journals/jama/fullarticle/2822854)).
 - Texas recorded **334 heat deaths in 2023** (preliminary state data, Jan 1 to Nov 30), the most since the state started tracking in 1989, and **Harris County had the most of any Texas county** ([Texas Tribune, Jan 12, 2024](https://www.texastribune.org/2024/01/12/texas-heat-deaths-2023-record-climate-change)).
