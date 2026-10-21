@@ -1,4 +1,4 @@
-# HeatWise accessibility and performance audit (Mon Oct 12, 2026, ~9:55–10:30 PM EDT)
+# HeatWise accessibility and performance audit (Mon Oct 12, 2026, ~9:55-10:30 PM EDT)
 
 Audit only. **No app code was changed**: HeatWise is submitted to EurekaDev 2026 and its behaviour is frozen. The few follow-ups are queued in BACKLOG.md as "post-judging a11y fixes", NOT BEFORE the EurekaDev winners announcement (Devpost: **Fri Nov 6, 2026, 9:00 AM** as printed, labelled "CDT", https://eurekadev.devpost.com/details/dates).
 
@@ -16,10 +16,10 @@ Audit only. **No app code was changed**: HeatWise is submitted to EurekaDev 2026
 ## Findings
 | # | Severity | WCAG | Finding | Fix it needs |
 |---|---|---|---|---|
-| H1 | Advisory (passes AA) | 1.4.3 Contrast (Minimum) | The amber flag-threshold label on the plan chart ("82°F", `fill="#a16207"`, 12 px bold) has a white halo (`stroke="#fff"`, `paint-order="stroke"`). Measured against the coloured band behind it: 4.53–4.77:1. It passes, but only just. | Optional: darken to `#854d0e` (6.38:1 on the yellow band) for margin. |
+| H1 | Advisory (passes AA) | 1.4.3 Contrast (Minimum) | The amber flag-threshold label on the plan chart ("82°F", `fill="#a16207"`, 12 px bold) has a white halo (`stroke="#fff"`, `paint-order="stroke"`). Measured against the coloured band behind it: 4.53-4.77:1. It passes, but only just. | Optional: darken to `#854d0e` (6.38:1 on the yellow band) for margin. |
 
 No other issues found:
-- **axe:** 0 violations of any impact in all 8 view×width runs. axe left the chart text (SVG) "incomplete" (40–254 nodes per view). Pixel measurement shows axis labels at 7.63:1 and titles at 17.49:1; only H1 is close to the limit.
+- **axe:** 0 violations of any impact in all 8 view×width runs. axe left the chart text (SVG) "incomplete" (40-254 nodes per view). Pixel measurement shows axis labels at 7.63:1 and titles at 17.49:1; only H1 is close to the limit.
 - **Keyboard:** skip link first, moves focus to `<main>`; 48 stops; no trap; nothing unreachable; blue ring `#2563eb` at 4.91:1 on the page and 5.17:1 on white.
 - **360 / 320 px:** no sideways scroll, nothing past the right edge, no target under 24 px, no text under 12 px.
 

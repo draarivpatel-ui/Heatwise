@@ -24,7 +24,7 @@ const V = {
     thPoint: "Point", thN: "Hours", thHiMae: "Heat index MAE", thHiBias: "Heat index bias", thWbMae: "WBGT MAE (app, U.S. path)", thWbBias: "WBGT bias",
     replayTitle: "Replay: Houston's record heat, August 24, 2023",
     replayIntro: (peakT) => `On Thursday, August 24, 2023, Bush Intercontinental Airport (IAH) reached 109°F, tying Houston's all-time record high, during an NWS Excessive Heat Warning. We fed the airport's archived hourly weather reports (with archived sunshine) through HeatWise to see what a coach would have seen that day.`,
-    rPeakHi: "Peak heat index", rPeakW: "Peak WBGT in the sun", rBlack: "Hours at UIL black flag", rBest: "Safest 2-hour practice window (6 AM–9 PM)",
+    rPeakHi: "Peak heat index", rPeakW: "Peak WBGT in the sun", rBlack: "Hours at UIL black flag", rBest: "Safest 2-hour practice window (6 AM to 9 PM)",
     rBlackSub: (b, r) => `plus ${r} at red. Black = no outdoor workouts.`,
     rBestSub: (w, f) => `${f} flag, WBGT up to ${w}°F`,
     rAt: (t) => `at the ${t} report`,
@@ -65,7 +65,7 @@ const V = {
     thPoint: "Punto", thN: "Horas", thHiMae: "MAE índice de calor", thHiBias: "Sesgo índice de calor", thWbMae: "MAE WBGT (app, EE. UU.)", thWbBias: "Sesgo WBGT",
     replayTitle: "Repetición: el calor récord de Houston, 24 de agosto de 2023",
     replayIntro: () => `El jueves 24 de agosto de 2023, el aeropuerto Bush Intercontinental (IAH) llegó a 109°F, igualando el récord histórico de Houston, durante una Advertencia de Calor Excesivo del NWS. Pasamos los reportes horarios archivados del aeropuerto (con la radiación solar archivada) por HeatWise para ver lo que un entrenador habría visto ese día.`,
-    rPeakHi: "Índice de calor máximo", rPeakW: "WBGT máximo al sol", rBlack: "Horas con bandera negra UIL", rBest: "Horario más seguro de 2 horas (6 a. m.–9 p. m.)",
+    rPeakHi: "Índice de calor máximo", rPeakW: "WBGT máximo al sol", rBlack: "Horas con bandera negra UIL", rBest: "Horario más seguro de 2 horas (6 a. m. a 9 p. m.)",
     rBlackSub: (b, r) => `más ${r} con roja. Negra = no entrenar al aire libre.`,
     rBestSub: (w, f) => `bandera ${f}, WBGT de hasta ${w}°F`,
     rAt: (t) => `en el reporte de las ${t}`,
@@ -164,7 +164,7 @@ export async function renderValidation(newLang = lang) {
   try { c = await load(); }
   catch (e) { console.warn(e); root.innerHTML = `<p class="status error">${esc(S.loadErr)}</p>`; return; }
   const R = c.results, w = R.window, rp = R.replay;
-  const bestTxt = rp.best ? `${fmtHour(rp.rows[rp.best.start].t)}–${fmtHour(rp.rows[rp.best.end].t + 3600e3)}` : "–";
+  const bestTxt = rp.best ? `${fmtHour(rp.rows[rp.best.start].t)}-${fmtHour(rp.rows[rp.best.end].t + 3600e3)}` : "-";
   const bestMax = rp.bestRows.length ? Math.max(...rp.bestRows.map((r) => r.wbgtF)) : NaN;
   const obsT = (t) => fmtHM(t - 7 * 60e3); // each row stands for the :53 report before it
   const fnwsLink = (p) => `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a>`;

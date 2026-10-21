@@ -2,7 +2,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+import { fileURLToPath } from "node:url";
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 let n = 0;
 const t = (name, f) => { f(); n++; console.log("ok -", name); };

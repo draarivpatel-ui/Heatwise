@@ -32,8 +32,8 @@ export const CLOTHING = {
  * Texas UIL WBGT activity guidelines for outdoor athletics and marching band (°F of WBGT).
  * Each number is the lower edge of the next flag: below the 1st = green, below the 2nd = yellow,
  * below the 3rd = orange, below the 4th = red, otherwise black.
- * Class 3: <82.0 | 82.0–86.9 | 87.0–90.0 | 90.1–92.0 | ≥92.1
- * Class 2: <79.7 | 79.7–84.6 | 84.7–87.6 | 87.7–89.7 | ≥89.8
+ * Class 3: <82.0 | 82.0-86.9 | 87.0-90.0 | 90.1-92.0 | ≥92.1
+ * Class 2: <79.7 | 79.7-84.6 | 84.7-87.6 | 87.7-89.7 | ≥89.8
  * Source: UIL, 2025-26 Heat Plan Recommendations (WBGT Activity Guidelines table) and the
  * 2026-27 "Heat Stress & Athletic Participation REQUIRED Plan" page (same chart; required from
  * Aug 1, 2026). Thresholds are UIL's modification of ACSM guidance.
@@ -137,7 +137,7 @@ function hCylinder(d, tk, p, speed) {
   return (nu * thermalCond(tk)) / d;
 }
 
-/** Black-globe temperature, °C. tk in K, rhFrac 0–1, p in hPa, speed m/s (2 m), solar W/m². */
+/** Black-globe temperature, °C. tk in K, rhFrac 0-1, p in hPa, speed m/s (2 m), solar W/m². */
 export function globeTemp(tk, rhFrac, p, speed, solar, fdir, cza) {
   const tsfc = tk;
   let prev = tk, next = NaN;
@@ -220,7 +220,7 @@ export function solarParams(solar, cza, distFactor = 1) {
   return { solar: norm * toa, fdir };
 }
 
-/** EPA stability class (1–6) used to scale 10-m wind to 2 m (EPA-454/5-99-005 via Liljegren). */
+/** EPA stability class (1-6) used to scale 10-m wind to 2 m (EPA-454/5-99-005 via Liljegren). */
 function stabilityClass(daytime, speed, solar, dT = -1) {
   const table = [
     [1, 1, 2, 4, 0, 5, 6, 0],
@@ -432,7 +432,7 @@ export function hourAllowed(hr, earliest, latest) {
 
 /**
  * NIOSH (CDC Workplace Recommendations): for moderate activity in the heat lasting under 2 hours,
- * 1 cup (8 oz) every 15–20 minutes; generally no more than 6 cups (48 oz) per hour; if sweating
+ * 1 cup (8 oz) every 15-20 minutes; generally no more than 6 cups (48 oz) per hour; if sweating
  * lasts several hours, sports drinks with balanced electrolytes; water cooler than 15 °C (59 °F).
  * https://www.cdc.gov/niosh/heat-stress/recommendations/index.html
  */
@@ -452,7 +452,7 @@ export function hydrationPlan(durationHours) {
 /**
  * NIOSH acclimatization schedule (percent of usual time in the heat, per day).
  * New workers: ≤20% on day 1, then no more than +20% each day.
- * Experienced workers: ≤50%, 60%, 80%, 100% on days 1–4.
+ * Experienced workers: ≤50%, 60%, 80%, 100% on days 1-4.
  */
 export function acclimatizationSchedule(usualMinutes, isNew) {
   const pcts = isNew ? [20, 40, 60, 80, 100] : [50, 60, 80, 100];
@@ -493,7 +493,7 @@ export function sampleHours(fromMs = Date.now(), place = SAMPLE_PLACE) {
 }
 
 const hourFmtCache = new Map();
-/** Local hour-of-day (0–23) of a UTC instant in an IANA time zone (DST-aware). */
+/** Local hour-of-day (0-23) of a UTC instant in an IANA time zone (DST-aware). */
 export function localHour(utcMs, tz) {
   const key = tz || "local";
   let f = hourFmtCache.get(key);

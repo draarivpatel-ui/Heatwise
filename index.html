@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>HeatWise – plan outdoor practice and work around the heat</title>
+  <title>HeatWise - plan outdoor practice and work around the heat</title>
   <meta name="description" content="HeatWise turns a free weather forecast into an hour-by-hour heat-safety plan for student athletes, marching band, coaches and outdoor workers, using Texas UIL WBGT flags and OSHA/NIOSH heat-stress limits." />
   <meta name="theme-color" content="#7c2d12" />
   <meta property="og:type" content="website" />
@@ -90,12 +90,12 @@
         <div id="oshaFields" hidden>
           <label for="workload" data-i18n="workload">Workload (OSHA category)</label>
           <select id="workload">
-            <option value="light" data-i18n="wl_light">Light – sitting/standing, slow walking</option>
-            <option value="moderate" data-i18n="wl_moderate">Moderate – steady walking, raking, light carts</option>
-            <option value="heavy" data-i18n="wl_heavy">Heavy – carrying loads, shoveling, roofing, landscaping</option>
-            <option value="veryHeavy" data-i18n="wl_veryHeavy">Very heavy – near-max pace, fitness training, climbing</option>
+            <option value="light" data-i18n="wl_light">Light - sitting/standing, slow walking</option>
+            <option value="moderate" data-i18n="wl_moderate">Moderate - steady walking, raking, light carts</option>
+            <option value="heavy" data-i18n="wl_heavy">Heavy - carrying loads, shoveling, roofing, landscaping</option>
+            <option value="veryHeavy" data-i18n="wl_veryHeavy">Very heavy - near-max pace, fitness training, climbing</option>
           </select>
-          <label class="check"><input id="acclimatized" type="checkbox" /> <span data-i18n="acclimatized">Acclimatized (doing this in the heat for 1–2+ weeks)</span></label>
+          <label class="check"><input id="acclimatized" type="checkbox" /> <span data-i18n="acclimatized">Acclimatized (doing this in the heat for 1 to 2+ weeks)</span></label>
           <label for="clothing" data-i18n="clothing">Clothing</label>
           <select id="clothing">
             <option value="work" data-i18n="cl_work">Normal work or athletic clothes</option>
@@ -167,7 +167,7 @@
         </article>
         <article class="card" aria-labelledby="acclTitle">
           <h3 id="acclTitle" data-i18n="acclTitle">Acclimatization planner</h3>
-          <p class="small" data-i18n="acclIntro">New to the heat this season? NIOSH says build up time in the heat over 7–14 days.</p>
+          <p class="small" data-i18n="acclIntro">New to the heat this season? NIOSH says build up time in the heat over 7 to 14 days.</p>
           <p id="acclAthlete" class="small muted" data-i18n="acclAthlete" hidden>This is NIOSH's worker schedule; athletes should also follow their school's acclimatization rules.</p>
           <div class="row">
             <div><label for="acclUsual" data-i18n="acclUsual">Usual session (minutes)</label><input id="acclUsual" type="number" inputmode="numeric" min="10" max="720" step="10" value="120" /></div>
@@ -218,7 +218,7 @@
       <ol>
         <li><b>Forecast:</b> for U.S. places, hourly air temperature, humidity and wind come from the <b>National Weather Service</b> gridded forecast (api.weather.gov, the same grid behind the NWS heat index and WBGT forecasts); sunshine (solar radiation) and pressure come from Open-Meteo, because the NWS grid has none. Outside the U.S., or if the NWS does not answer, every input comes from Open-Meteo. Both are free with no key, and the plan says which source it used.</li>
         <li><b>WBGT in the sun</b> (wet-bulb globe temperature, the heat-stress index used by OSHA, NIOSH, the military and Texas UIL) is estimated with the <b>Liljegren et al. (2008)</b> physics model: it solves the heat balance of a black globe and a wet wick using the sun's angle, sunshine, wind, humidity and temperature, then WBGT = 0.7·T<sub>nwb</sub> + 0.2·T<sub>g</sub> + 0.1·T<sub>a</sub>. HeatWise's JavaScript port is tested against the open-source reference implementation (pywbgt) to within 0.05 °C. If sun or wind data are missing it falls back to the simpler Bureau of Meteorology formula <code>WBGT ≈ 0.567·T + 0.393·e + 3.94</code>.</li>
-        <li><b>Texas UIL mode:</b> the WBGT is compared with UIL's WBGT activity flags (Class 3: green &lt; 82.0 °F, yellow 82.0–86.9, orange 87.0–90.0, red 90.1–92.0, black ≥ 92.1; Class 2 thresholds are 79.7 / 84.7 / 87.7 / 89.8 °F), and HeatWise shows UIL's practice limits for each flag.</li>
+        <li><b>Texas UIL mode:</b> the WBGT is compared with UIL's WBGT activity flags (Class 3: green &lt; 82.0 °F, yellow 82.0 to 86.9, orange 87.0 to 90.0, red 90.1 to 92.0, black ≥ 92.1; Class 2 thresholds are 79.7 / 84.7 / 87.7 / 89.8 °F), and HeatWise shows UIL's practice limits for each flag.</li>
         <li><b>Work mode:</b> effective WBGT = WBGT + clothing factor (OSHA/NIOSH: 0 to +11 °C), compared with the OSHA/NIOSH limit for the workload: light 28/30 °C, moderate 25/28, heavy 23/26, very heavy 21/25 (unacclimatized/acclimatized). HeatWise's ±2 °C bands around that limit are its own design choice.</li>
         <li><b>Safest window:</b> among every run of consecutive allowed hours, pick the one whose worst hour is coolest (a minimax problem), solved in O(n) with a sliding-window maximum.</li>
         <li><b>Heat index</b> (shade, shown for familiarity) uses the NWS Rothfusz regression.</li>
@@ -228,7 +228,7 @@
       <ol>
         <li><b>Pronóstico:</b> en lugares de EE. UU., la temperatura del aire, la humedad y el viento por hora vienen del pronóstico en cuadrícula del <b>Servicio Meteorológico Nacional</b> (api.weather.gov, la misma cuadrícula de los pronósticos de índice de calor y WBGT del NWS); el sol (radiación solar) y la presión vienen de Open-Meteo, porque la cuadrícula del NWS no los trae. Fuera de EE. UU., o si el NWS no responde, todo viene de Open-Meteo. Ambos son gratis y sin clave, y el plan dice qué fuente usó.</li>
         <li><b>WBGT al sol</b> (temperatura de globo y bulbo húmedo, el índice de estrés por calor que usan OSHA, NIOSH, el ejército y la UIL de Texas) se estima con el modelo físico de <b>Liljegren et al. (2008)</b>: resuelve el balance de calor de un globo negro y una mecha mojada con el ángulo del sol, la radiación, el viento, la humedad y la temperatura; luego WBGT = 0.7·T<sub>nwb</sub> + 0.2·T<sub>g</sub> + 0.1·T<sub>a</sub>. La versión en JavaScript de HeatWise se compara en pruebas con la implementación de referencia de código abierto (pywbgt), con una diferencia menor a 0.05 °C. Si faltan datos de sol o viento, usa la fórmula simple de la Oficina de Meteorología de Australia <code>WBGT ≈ 0.567·T + 0.393·e + 3.94</code>.</li>
-        <li><b>Modo UIL de Texas:</b> el WBGT se compara con las banderas de actividad WBGT de la UIL (Clase 3: verde &lt; 82.0 °F, amarilla 82.0–86.9, naranja 87.0–90.0, roja 90.1–92.0, negra ≥ 92.1; en Clase 2 los límites son 79.7 / 84.7 / 87.7 / 89.8 °F), y HeatWise muestra los límites de práctica de la UIL para cada bandera.</li>
+        <li><b>Modo UIL de Texas:</b> el WBGT se compara con las banderas de actividad WBGT de la UIL (Clase 3: verde &lt; 82.0 °F, amarilla 82.0 a 86.9, naranja 87.0 a 90.0, roja 90.1 a 92.0, negra ≥ 92.1; en Clase 2 los límites son 79.7 / 84.7 / 87.7 / 89.8 °F), y HeatWise muestra los límites de práctica de la UIL para cada bandera.</li>
         <li><b>Modo trabajo:</b> WBGT efectivo = WBGT + factor de ropa (OSHA/NIOSH: de 0 a +11 °C), comparado con el límite OSHA/NIOSH para la carga de trabajo: ligera 28/30 °C, moderada 25/28, pesada 23/26, muy pesada 21/25 (no aclimatado/aclimatado). Las bandas de ±2 °C alrededor del límite son una decisión de diseño de HeatWise.</li>
         <li><b>Horario más seguro:</b> entre todos los bloques de horas seguidas permitidas, elige el que tiene la peor hora más fresca (un problema minimax), resuelto en O(n) con un máximo de ventana deslizante.</li>
         <li><b>Índice de calor</b> (a la sombra, como referencia) usa la regresión de Rothfusz del NWS.</li>

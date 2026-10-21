@@ -76,12 +76,12 @@ export function coachPlan(scored, { tz, day, duration = 2, earliest = 6, latest 
  */
 export function coachPlanText(plan, S, f) {
   const L = [];
-  L.push(`${S.sheetTitle} – ${f.date(plan.rows[0]?.t ?? Date.now())}`);
+  L.push(`${S.sheetTitle} - ${f.date(plan.rows[0]?.t ?? Date.now())}`);
   if (f.replay) L.push(S.sheetReplayNote);
   L.push(`${S.sheetPlace}: ${f.place}`);
   L.push(`${S.sheetActivity}: ${f.activity} · ${f.guideline} · ${f.duration} h`);
   if (plan.best) {
-    L.push(`${S.sheetWindow}: ${f.time(plan.best.startT)} – ${f.time(plan.best.endT)} (${S.worstHour}: ${S["level_" + plan.worst.level]}, WBGT ${cToF(f.uil ? plan.worst.wbgt : plan.worst.effWbgt).toFixed(1)}°F)`);
+    L.push(`${S.sheetWindow}: ${f.time(plan.best.startT)} - ${f.time(plan.best.endT)} (${S.worstHour}: ${S["level_" + plan.worst.level]}, WBGT ${cToF(f.uil ? plan.worst.wbgt : plan.worst.effWbgt).toFixed(1)}°F)`);
     const rule = f.uil ? S["uil_" + plan.worst.level] : S["adv_" + plan.worst.level];
     L.push(`→ ${rule}`);
     if (f.uil && f.duration > plan.worst.maxHours) L.push(`⚠ ${S.windowTooLong(plan.worst.maxHours)}`);

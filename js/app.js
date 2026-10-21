@@ -260,7 +260,7 @@ function render(scrollTo = false) {
   if (best) {
     const worst = scored.slice(best.start, best.end + 1).reduce((a, b) => (b.margin > a.margin ? b : a));
     setRiskCard("bestCard", worst.level);
-    $("bestTime").innerHTML = `${escapeHtml(fmtTime(scored[best.start].t))} – ${escapeHtml(fmtTime(scored[best.end].t + 3600e3, false))}`;
+    $("bestTime").innerHTML = `${escapeHtml(fmtTime(scored[best.start].t))} - ${escapeHtml(fmtTime(scored[best.end].t + 3600e3, false))}`;
     $("bestStats").innerHTML = `<dt>${t("worstHour")}</dt><dd>${pill(worst.level)} ${escapeHtml(fmtTime(worst.t, false))}</dd>` + statsHtml(worst, uil);
     const clear = allClear(scored, allowed);
     $("bestAdvice").textContent = (clear ? t(uil ? "allClearUil" : "allClearOsha") + " " : "") + advice(worst.level, uil) + (sameHours ? " " + t("hoursInvalid") : "");
@@ -270,7 +270,7 @@ function render(scrollTo = false) {
     }
   } else {
     setRiskCard("bestCard", "");
-    $("bestTime").textContent = "—";
+    $("bestTime").textContent = "-";
     $("bestStats").innerHTML = "";
     $("bestAdvice").textContent = t("noWindow");
   }
@@ -327,12 +327,12 @@ function renderSource(visible) {
 function printSummaryText(p) {
   const pr = $("preset");
   const parts = [`${t("printSummary")}: ${pr.options[pr.selectedIndex]?.text || ""}`,
-    p.guideline === "uil" ? `${t("gl_uil")} – ${t("uil_" + p.uilClass)}` : `${t("gl_osha")} – ${$("workload").selectedOptions[0]?.text}, ${p.acclimatized ? t("acclimatized") : t("notAcclimatized")}, ${$("clothing").selectedOptions[0]?.text}`,
+    p.guideline === "uil" ? `${t("gl_uil")} - ${t("uil_" + p.uilClass)}` : `${t("gl_osha")} - ${$("workload").selectedOptions[0]?.text}, ${p.acclimatized ? t("acclimatized") : t("notAcclimatized")}, ${$("clothing").selectedOptions[0]?.text}`,
     `${t("duration")}: ${p.duration}`, `${t("earliest")}: ${hourLabel(p.earliest)}`, `${t("latest")}: ${hourLabel(p.latest)}`];
   return parts.join(" · ");
 }
 
-// Usual session length the schedule uses: kept inside 10–720 min; a blank or unreadable box means the 120-min default.
+// Usual session length the schedule uses: kept inside 10-720 min; a blank or unreadable box means the 120-min default.
 function acclMinutes() {
   const raw = $("acclUsual").value.trim(), n = Math.round(Number(raw));
   return raw === "" || !Number.isFinite(n) ? 120 : Math.min(720, Math.max(10, n));
@@ -432,7 +432,7 @@ function renderChart() {
     }
   });
   box.innerHTML = s + "</svg>";
-  const bestText = best ? `${fmtTime(scored[best.start].t)} – ${fmtTime(scored[best.end].t + 3600e3, false)}` : "";
+  const bestText = best ? `${fmtTime(scored[best.start].t)} - ${fmtTime(scored[best.end].t + 3600e3, false)}` : "";
   box.setAttribute("aria-label", STRINGS[state.lang][state.data.isReplay ? "chartAriaReplay" : "chartAria"](`${Math.round(Math.min(...valF))}°F`, `${Math.round(Math.max(...valF))}°F`, bestText));
 
   const levels = uil ? ["green", "yellow", "orange", "red", "black"] : ["low", "caution", "high", "extreme"];
@@ -454,8 +454,8 @@ function sheetCtx(L, forText = false) {
   const preset = $("preset").value in S.presets ? $("preset").value : "custom";
   const replay = !!state.data.isReplay;
   const guideline = p.guideline === "uil"
-    ? `${S.gl_uil} – ${S["uil_" + p.uilClass]}`
-    : `${S.gl_osha} – ${S["wl_" + p.workload]}; ${p.acclimatized ? S.acclimatized : S.notAcclimatized}; ${S["cl_" + p.clothing]}`;
+    ? `${S.gl_uil} - ${S["uil_" + p.uilClass]}`
+    : `${S.gl_osha} - ${S["wl_" + p.workload]}; ${p.acclimatized ? S.acclimatized : S.notAcclimatized}; ${S["cl_" + p.clothing]}`;
   const d = state.data;
   return {
     S, L, uil: p.guideline === "uil", replay, duration: p.duration, water: hydrationPlan(p.duration),
@@ -464,7 +464,7 @@ function sheetCtx(L, forText = false) {
     hour: (ms) => dfmt(L, { hour: "numeric" }).format(new Date(ms)),
     place: d.place.label === "myLocation" ? `${S.myLocation} (${d.place.name})` : d.place.name,
     activity: S.presets[preset], guideline,
-    hours: `${hourLabel(p.earliest, L)} – ${hourLabel(p.latest, L)}`,
+    hours: `${hourLabel(p.earliest, L)} - ${hourLabel(p.latest, L)}`,
     url: forText ? location.href : "",
   };
 }
@@ -492,7 +492,7 @@ function sheetHtml(plan, f) {
   if (plan.best) {
     const w = plan.worst;
     win = `<div class="sh-window sev${SEVERITY[w.level]}"><div>${e(S.sheetWindow)}</div>
-      <div class="sh-big">${e(f.time(plan.best.startT))} – ${e(f.time(plan.best.endT))}</div>
+      <div class="sh-big">${e(f.time(plan.best.startT))} - ${e(f.time(plan.best.endT))}</div>
       <p>${e(S.worstHour)}: ${pillL(w.level)} ${e(f.hour(w.t))} · WBGT ${wb(w)}°F</p>
       <p>${e(rule(w.level))}</p>
       ${f.uil && f.duration > w.maxHours ? `<p><strong>${e(S.windowTooLong(w.maxHours))}</strong></p>` : ""}</div>`;
@@ -669,7 +669,7 @@ $("coachPrintBtn").addEventListener("click", () => {
 window.addEventListener("afterprint", () => document.body.classList.remove("print-coach"));
 $("coachShareBtn").addEventListener("click", async () => {
   if (!lastCoach) return;
-  const text = sheetLangs().map((L) => coachPlanText(lastCoach, STRINGS[L], sheetCtx(L, true))).join("\n\n— — —\n\n");
+  const text = sheetLangs().map((L) => coachPlanText(lastCoach, STRINGS[L], sheetCtx(L, true))).join("\n\n- - -\n\n");
   const title = sheetLangs().map((L) => STRINGS[L].sheetTitle).join(" / ");
   try {
     if (navigator.share && matchMedia("(pointer: coarse)").matches) { await navigator.share({ title, text }); return; }

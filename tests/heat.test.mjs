@@ -242,7 +242,7 @@ test("allowed hours: normal, overnight, and whole-day windows", () => {
   assert.equal(hourAllowed(20, 6, 21), true);
   assert.equal(hourAllowed(21, 6, 21), false); // must FINISH by 9 pm, so the 9 pm hour is out
   assert.equal(hourAllowed(5, 6, 21), false);
-  assert.equal(hourAllowed(23, 20, 6), true);  // overnight shift 8 pm – 6 am
+  assert.equal(hourAllowed(23, 20, 6), true);  // overnight shift 8 pm - 6 am
   assert.equal(hourAllowed(3, 20, 6), true);
   assert.equal(hourAllowed(12, 20, 6), false);
   assert.equal(hourAllowed(12, 0, 24), true);
@@ -251,7 +251,7 @@ test("allowed hours: normal, overnight, and whole-day windows", () => {
 });
 
 // ---------- hydration, acclimatization ----------
-test("hydration plan follows NIOSH (1 cup every 15–20 min, ≤48 oz/h, electrolytes for longer sweating)", () => {
+test("hydration plan follows NIOSH (1 cup every 15-20 min, ≤48 oz/h, electrolytes for longer sweating)", () => {
   const p = hydrationPlan(1);
   assert.equal(p.cupsLow, 3);
   assert.equal(p.cupsHigh, 4);
@@ -345,7 +345,7 @@ test("guidance strings match the sources' numbers in both languages", () => {
     assert.ok(S.uilPlanningNote.includes("82.0") && S.uilPlanningNote.includes("79.7") && S.uilPlanningNote.includes("15") && S.uilPlanningNote.includes("30"), `${lang}: UIL monitoring rule`);
     assert.ok(S.signsStroke.includes("911") && S.signsRule.includes("911"), `${lang}: call 911 (OSHA)`);
     assert.ok(S.signsStroke.includes("103"), `${lang}: heat stroke > 103 °F (NWS)`);
-    assert.ok(S.acclIntro.includes("7") && S.acclIntro.includes("14"), `${lang}: 7–14 days (NIOSH)`);
+    assert.ok(S.acclIntro.includes("7") && S.acclIntro.includes("14"), `${lang}: 7-14 days (NIOSH)`);
     assert.ok(/SYNTHETIC|SINTÉTICO/.test(S.errApi) && /SYNTHETIC|SINTÉTICO/.test(S.sampleBanner), `${lang}: fallback is labelled as not real`);
     assert.ok(S.windowTooLong(2).includes("2") && S.windowTooLong(1).includes("1"), `${lang}: UIL practice caps`);
   }
@@ -682,7 +682,7 @@ test("replay: the plan view's hours reproduce the validation replay exactly (sam
   assert.equal(REPLAY.place.lat, DAY.lat); assert.equal(REPLAY.place.lon, DAY.lon); assert.equal(REPLAY.place.tz, DAY.tz);
 });
 
-test("coach plan on the record day: 6 AM–8 AM green window, black flag hours inside practice hours, same as the replay", () => {
+test("coach plan on the record day: 6 AM-8 AM green window, black flag hours inside practice hours, same as the replay", () => {
   const scored = scoreHours(replayHours(DAY), UIL3, REPLAY.place);
   const plan = coachPlan(scored, { tz: DAY.tz, day: REPLAY.day, duration: 2, earliest: 6, latest: 21 });
   const rp = replayDay(DAY);
@@ -701,7 +701,7 @@ test("coach plan on the record day: 6 AM–8 AM green window, black flag hours i
 
 test("coach plan edge cases: no window, whole-day hours, a forecast that spans two days (DST-aware day keys)", () => {
   const scored = scoreHours(replayHours(DAY), UIL3, REPLAY.place);
-  assert.equal(coachPlan(scored, { tz: DAY.tz, day: REPLAY.day, duration: 5, earliest: 6, latest: 9 }).best, null, "5 h can't fit in 6–9 AM");
+  assert.equal(coachPlan(scored, { tz: DAY.tz, day: REPLAY.day, duration: 5, earliest: 6, latest: 9 }).best, null, "5 h can't fit in 6-9 AM");
   const whole = coachPlan(scored, { tz: DAY.tz, day: REPLAY.day, duration: 2, earliest: 7, latest: 7 });
   assert.equal(whole.rows.length, 24, "same start and finish = whole day");
   const outside = coachPlan(scored, { tz: DAY.tz, day: "2023-08-25", duration: 2, earliest: 6, latest: 21 });
@@ -725,7 +725,7 @@ test("coach plan text: English and Spanish, every hour, the window, 911 and the 
     const txt = coachPlanText(plan, S, { ...f, place: DAY.name, activity: S.presets.football, guideline: S.gl_uil, uil: true, replay: true, duration: 2, water: hydrationPlan(2), url: "https://aariv.me/Heatwise/?replay=iah2023" });
     assert.ok(txt.startsWith(S.sheetTitle), lang);
     assert.ok(txt.includes(S.sheetReplayNote), `${lang}: labelled as a historical replay`);
-    assert.ok(txt.includes(`${f.time(plan.best.startT)} – ${f.time(plan.best.endT)}`), `${lang}: window`);
+    assert.ok(txt.includes(`${f.time(plan.best.startT)} - ${f.time(plan.best.endT)}`), `${lang}: window`);
     assert.ok(txt.includes("911"), `${lang}: 911`);
     assert.ok(txt.includes(S.uil_green), `${lang}: the window's UIL rule`);
     for (const h of plan.rows) assert.ok(txt.includes(f.time(h.t)), `${lang}: hour ${f.time(h.t)}`);
@@ -755,7 +755,7 @@ test("page wiring: replay button sits above the form, coach plan card + print-on
   assert.match(STRINGS.es.replayBanner, /REPETICIÓN HISTÓRICA, no es un pronóstico/);
   for (const lang of ["en", "es"]) {
     assert.ok(STRINGS[lang].sheetCheck3.includes("911") && STRINGS[lang].sheetMeasure.includes("15") && STRINGS[lang].sheetMeasure.includes("30"), lang);
-    assert.match(STRINGS[lang].chartAriaReplay("78°F", "94°F", "6 AM – 8 AM"), /2023/);
+    assert.match(STRINGS[lang].chartAriaReplay("78°F", "94°F", "6 AM - 8 AM"), /2023/);
   }
   assert.ok(!fs.existsSync(new URL("../heatwise.zip", import.meta.url)), "stale heatwise.zip removed");
 });
