@@ -16,8 +16,8 @@
 // a limited request can be retried after ~5 s. Coordinates are rounded to 4 decimals (more decimals
 // get a 301 redirect). Only CORS-safelisted headers are sent from the browser, so there is no preflight.
 
-export const NWS_API = "https://api.weather.gov";
-export const OPEN_METEO_API = "https://api.open-meteo.com/v1/forecast";
+const NWS_API = "https://api.weather.gov";
+const OPEN_METEO_API = "https://api.open-meteo.com/v1/forecast";
 export const NWS_USER_AGENT = "HeatWise heat-safety planner (github.com/draarivpatel-ui/Heatwise)";
 const IS_BROWSER = typeof window !== "undefined" && typeof document !== "undefined";
 
@@ -169,7 +169,7 @@ export function nwsOnlyHours(nwsMap) {
 }
 
 /** Open-Meteo hourly forecast (all inputs). */
-export async function fetchOpenMeteo(lat, lon, { fetchImpl = fetch, timeoutMs = 10000, days = 3 } = {}) {
+async function fetchOpenMeteo(lat, lon, { fetchImpl = fetch, timeoutMs = 10000, days = 3 } = {}) {
   const params = new URLSearchParams({
     latitude: lat, longitude: lon,
     hourly: "temperature_2m,relative_humidity_2m,shortwave_radiation,wind_speed_10m,surface_pressure,is_day",
@@ -254,7 +254,7 @@ export async function getForecast(lat, lon, { fetchImpl = fetch, now = Date.now(
 
 /** Cache lifetime for a repeat lookup, and how long an old answer may stand in when both APIs fail. */
 export const CACHE_TTL_MS = 30 * 60e3;
-export const CACHE_STALE_MAX_MS = 3 * 3600e3;
+const CACHE_STALE_MAX_MS = 3 * 3600e3;
 const cacheKey = (lat, lon) => `heatwise:fc:${lat.toFixed(2)},${lon.toFixed(2)}`;
 
 /**

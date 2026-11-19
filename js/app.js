@@ -4,7 +4,7 @@
 // forecast and place-search requests.
 import {
   scoreHours, bestWindow, hourAllowed, hydrationPlan, acclimatizationSchedule, sampleHours,
-  cToF, localHour, SEVERITY, UIL_CLASSES, fToC, SAMPLE_PLACE, WORKLOADS, CLOTHING, allClear
+  cToF, localHour, SEVERITY, UIL_CLASSES, SAMPLE_PLACE, WORKLOADS, CLOTHING, allClear
 } from "./heat.js";
 import { STRINGS, PRESETS } from "./i18n.js";
 import { renderValidation } from "./validation-ui.js";
