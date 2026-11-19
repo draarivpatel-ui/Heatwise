@@ -16,7 +16,7 @@ const OUT = new URL("../data/validation/", import.meta.url);
 fs.mkdirSync(OUT, { recursive: true });
 
 // Eight Houston-area points spread across the NWS Houston/Galveston (HGX) forecast area.
-export const POINTS = [
+const POINTS = [
   { id: "houston", name: "Houston (downtown)", lat: 29.7604, lon: -95.3698 },
   { id: "sugarland", name: "Sugar Land", lat: 29.6197, lon: -95.6349 },
   { id: "katy", name: "Katy", lat: 29.7858, lon: -95.8245 },

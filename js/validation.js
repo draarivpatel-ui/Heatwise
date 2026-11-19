@@ -56,7 +56,7 @@ export function forecastRows(point, forecastOnly = true) {
 }
 
 /** The NWS heat index is defined for air temperatures of 80 °F and up; below that NWS reports HI = T. */
-export const HI_MIN_F = 80;
+const HI_MIN_F = 80;
 
 /**
  * Heat index agreement. For every point and hour where the NWS published a valid temperature, RH and
@@ -88,7 +88,7 @@ export function compareHeatIndex(dataset, { minF = HI_MIN_F, forecastOnly = true
  * Rebuild the raw NWS grid series for one archived point (the snapshot stores one row per hour) so the
  * study can feed it through the app's own parser, nwsHourly(), exactly as a live response would be.
  */
-export function gridPropsFromSnapshot(point) {
+function gridPropsFromSnapshot(point) {
   const series = (c, uom) => ({ uom, values: point.rows.map((r) => ({ validTime: `${r[0].replace("Z", "+00:00")}/PT1H`, value: r[col(c)] })) });
   return {
     updateTime: point.updateTime,
@@ -98,7 +98,7 @@ export function gridPropsFromSnapshot(point) {
 }
 
 /** Open-Meteo snapshot rows as the hour objects the app builds from a live Open-Meteo response. */
-export const omHoursFromSnapshot = (omPoint) => omPoint.rows.map((q) => ({ t: Date.parse(q[0]), tempC: q[1], rh: q[2], radiation: q[3], wind10: q[4], pressure: q[5] }));
+const omHoursFromSnapshot = (omPoint) => omPoint.rows.map((q) => ({ t: Date.parse(q[0]), tempC: q[1], rh: q[2], radiation: q[3], wind10: q[4], pressure: q[5] }));
 
 /**
  * WBGT agreement. `om` is data/validation/openmeteo.json: per point, rows aligned to the same UTC

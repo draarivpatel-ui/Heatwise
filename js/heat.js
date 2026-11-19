@@ -94,7 +94,7 @@ const EMIS_SFC = 0.999, ALB_SFC = 0.45;
 const CZA_MIN = 0.00873, NORMSOLAR_MAX = 0.85, SOLAR_CONST = 1367;
 const CONVERGENCE = 0.02, MAX_ITER = 50;
 /** Minimum 2-m wind speed: 2 knots, pywbgt's default floor (the C code's own floor is 0.13 m/s). */
-export const MIN_SPEED = 1.0288889;
+const MIN_SPEED = 1.0288889;
 
 /** Saturation vapour pressure over water, hPa (Buck 1981), with the C code's 1.004 enhancement. */
 function esatK(tk) {
@@ -241,7 +241,7 @@ function stabilityClass(daytime, speed, solar, dT = -1) {
 }
 
 /** Estimate 2-m wind from 10-m wind (rural power law), floored at MIN_SPEED. */
-export function windAt2m(speed10, daytime, solar) {
+function windAt2m(speed10, daytime, solar) {
   const rural = [0.07, 0.07, 0.1, 0.15, 0.35, 0.55];
   const cls = stabilityClass(daytime, speed10, solar);
   return Math.max(speed10 * Math.pow(2 / 10, rural[cls - 1]), MIN_SPEED);

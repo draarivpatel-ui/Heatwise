@@ -2,8 +2,8 @@
 // it can be tested in Node; app.js only renders the result.
 import { fetchJson } from "./forecast.js";
 
-export const GEOCODE_API = "https://geocoding-api.open-meteo.com/v1/search";
-export const GEOCODE_TIMEOUT_MS = 8000;
+const GEOCODE_API = "https://geocoding-api.open-meteo.com/v1/search";
+const GEOCODE_TIMEOUT_MS = 8000;
 
 // All 50 states + DC, so "Chicago, IL" or "Miami, Florida" can steer the ranking.
 export const US_STATES = {
