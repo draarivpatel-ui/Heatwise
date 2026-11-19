@@ -13,7 +13,6 @@
   --accent: #b03a0a;
   --accent-dark: #7c2d12;
   --sev0: #15803d; /* low / green */
-  --sev1: #a16207; /* caution / yellow */
   --sev2: #c2410c; /* high / orange */
   --sev3: #b91c1c; /* extreme / red */
   --sev4: #111827; /* black */
@@ -183,7 +182,6 @@ figcaption { font-weight: 600; font-size: .92rem; margin-bottom: 6px; }
 .coach-sheets { margin-top: 12px; }
 .sheet { border: 1px dashed #a8a29e; border-radius: var(--radius); padding: 14px 16px; background: #fff; margin-top: 12px; font-size: .9rem; }
 .sheet h4 { margin: 0; font-size: 1.15rem; }
-.sheet .sh-sub { margin: 2px 0 8px; color: var(--muted); }
 .sheet .sh-replay { margin: 0 0 8px; padding: 4px 8px; background: #f1f3f5; border: 1px solid #475569; border-radius: 2px; font-weight: 700; color: #1e293b; }
 .sheet dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 8px; }
 .sheet dt { color: var(--muted); } .sheet dd { margin: 0; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
